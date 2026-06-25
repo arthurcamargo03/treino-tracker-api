@@ -27,6 +27,14 @@ public class WorkoutService {
         this.setLogRepository = setLogRepository;
     }
 
+    public List<Exercise> getExercises() {
+        return exerciseRepository.findAll();
+    }
+
+    public Exercise getExercise(Long exerciseId) {
+        return findExerciseOrThrow(exerciseId);
+    }
+
     @Transactional
     public Exercise addExercise(String name, String group) {
         if (exerciseRepository.findByNameIgnoreCase(name).isPresent()) {

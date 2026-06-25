@@ -1,0 +1,9 @@
+package com.treinotracker.dto;
+
+import jakarta.validation.constraints.Positive;
+
+public record SettingsRequest(
+        @Positive int dailyGoalMl,
+        @Positive int bottleSizeMl
+) {
+}
