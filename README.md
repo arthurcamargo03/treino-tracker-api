@@ -1,0 +1,168 @@
+# Treino Tracker API
+
+API REST (com frontend Thymeleaf) para acompanhar evolução de treino e hidratação diária. Calcula o 1RM estimado de cada série pela fórmula de Epley e a tendência de progressão semana a semana, além de controlar consumo de água contra uma meta diária configurável.
+
+Este projeto é a reescrita, como serviço web, de um app de console em Java ([`treino-tracker`](https://github.com/arthurcamargo03/treino-tracker)) que tinha a mesma lógica de domínio.
+
+## Demo
+
+- **Aplicação:** `<URL da demo após o deploy>`
+- **Swagger UI:** `<URL da demo>/swagger-ui.html`
+
+> As URLs acima são preenchidas após o deploy (ver seção [Deploy](#deploy)).
+
+## Prints
+
+| Exercícios | Detalhe + progressão | Hidratação |
+|---|---|---|
+| ![Lista de exercícios](docs/screenshots/exercises.png) | ![Gráfico de 1RM](docs/screenshots/exercise-detail.png) | ![Progresso de hidratação](docs/screenshots/water.png) |
+
+> Capturas a serem adicionadas em `docs/screenshots/` (rode a aplicação localmente e exporte os prints das três páginas).
+
+## Stack
+
+- **Java 21** + **Spring Boot 3.5** (Web, Data JPA, Validation)
+- **H2** (arquivo local, perfil `dev`) e **PostgreSQL** (perfil `prod`)
+- **Thymeleaf** + **Bootstrap 5** + **Chart.js 4** (frontend server-side consumindo a própria API via `fetch`)
+- **springdoc-openapi** (Swagger UI)
+- **JUnit 5 + Mockito + AssertJ** para testes
+- **Docker** para build/deploy
+
+## Arquitetura em camadas
+
+```mermaid
+graph TD
+    Browser[Browser / Thymeleaf] -->|HTML| PageController
+    Client[Cliente HTTP / Swagger] -->|JSON| Controller
+
+    subgraph "controller"
+        PageController
+        Controller["ExerciseController · SetLogController · WaterController"]
+    end
+
+    subgraph "service"
+        WorkoutService
+        WaterService
+    end
+
+    subgraph "repository"
+        ExerciseRepository
+        SetLogRepository
+        WaterLogRepository
+        SettingsRepository
+    end
+
+    subgraph "entity"
+        Exercise
+        SetLog
+        WaterLog
+        Settings
+    end
+
+    Controller --> WorkoutService
+    Controller --> WaterService
+    WorkoutService --> ExerciseRepository
+    WorkoutService --> SetLogRepository
+    WaterService --> WaterLogRepository
+    WaterService --> SettingsRepository
+    ExerciseRepository --> Exercise
+    SetLogRepository --> SetLog
+    WaterLogRepository --> WaterLog
+    SettingsRepository --> Settings
+
+    DB[(H2 / PostgreSQL)]
+    Exercise --> DB
+    SetLog --> DB
+    WaterLog --> DB
+    Settings --> DB
+```
+
+Regras de domínio (1RM de Epley, melhor série por semana, `trendPercent`, meta/garrafa de hidratação) ficam isoladas em `service`; `controller` só traduz HTTP ↔ DTO e nunca expõe entidades JPA diretamente.
+
+### Principais endpoints
+
+| Recurso | Endpoint |
+|---|---|
+| Exercícios | `GET/POST /api/exercises`, `GET /api/exercises/{id}` |
+| Séries e progressão | `POST /api/exercises/{id}/sets`, `GET /api/exercises/{id}/progression` |
+| Hidratação | `GET /api/water/today`, `POST /api/water/drink`, `GET/PUT /api/water/settings` |
+
+Lista completa, com schemas e exemplos, no Swagger UI (`/swagger-ui.html`).
+
+## Como rodar local
+
+Pré-requisitos: Java 21 e Maven (ou use o wrapper `./mvnw` incluído).
+
+```bash
+git clone https://github.com/arthurcamargo03/treino-tracker-api.git
+cd treino-tracker-api
+./mvnw spring-boot:run
+```
+
+A aplicação sobe em `http://localhost:8080` usando o perfil `dev` (padrão), com H2 em modo arquivo (dados persistidos em `./data/`). Console do H2 em `/h2-console` (JDBC URL `jdbc:h2:file:./data/treinotracker`, usuário `sa`, sem senha).
+
+- Frontend: `http://localhost:8080/exercises` e `http://localhost:8080/water`
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+Para subir com dados de exemplo (3 exercícios com históricos diferentes — progredindo, forte e estagnado):
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+Rodar os testes:
+
+```bash
+./mvnw test
+```
+
+### Rodando com Docker
+
+```bash
+docker build -t treino-tracker-api .
+docker run -p 8080:8080 treino-tracker-api
+```
+
+Por padrão o container também sobe no perfil `dev` (H2 dentro do próprio container — sem persistência entre execuções). Para usar PostgreSQL, defina `SPRING_PROFILES_ACTIVE=prod` e as variáveis descritas abaixo.
+
+## Deploy
+
+Perfis disponíveis:
+
+- **`dev`** (`application-dev.properties`) — H2 em arquivo, console habilitado. Usado localmente.
+- **`prod`** (`application-prod.properties`) — PostgreSQL via variáveis de ambiente, console do H2 desabilitado.
+
+O perfil `prod` lê a conexão exclusivamente de variáveis de ambiente (nunca de valores hardcoded no repositório):
+
+| Variável | Descrição |
+|---|---|
+| `SPRING_PROFILES_ACTIVE` | `prod` |
+| `PGHOST` | host do PostgreSQL |
+| `PGPORT` | porta do PostgreSQL |
+| `PGDATABASE` | nome do banco |
+| `PGUSER` | usuário |
+| `PGPASSWORD` | senha |
+| `PORT` | porta HTTP da aplicação (injetada automaticamente pela plataforma) |
+
+### Render
+
+O repositório inclui um `render.yaml` (Blueprint) que provisiona um banco PostgreSQL gerenciado e o serviço web a partir do `Dockerfile`, já conectando as variáveis acima automaticamente:
+
+1. No painel da Render, **New > Blueprint** e aponte para este repositório.
+2. A Render cria o banco `treino-tracker-db` e o serviço `treino-tracker-api`, já com `SPRING_PROFILES_ACTIVE=prod` e as credenciais do banco injetadas via `fromDatabase`.
+3. Após o primeiro deploy, copie a URL pública gerada e atualize a seção [Demo](#demo) deste README.
+
+### Railway
+
+1. **New Project > Deploy from GitHub repo**, selecione este repositório (o Railway detecta o `Dockerfile` automaticamente).
+2. Adicione um serviço **PostgreSQL** ao projeto — o Railway expõe `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` automaticamente para os demais serviços do mesmo projeto.
+3. No serviço da aplicação, defina a variável `SPRING_PROFILES_ACTIVE=prod`.
+4. Gere um domínio público em **Settings > Networking** e atualize a seção [Demo](#demo).
+
+## Próximos passos
+
+- Trocar `ddl-auto=update` por migrations versionadas (Flyway/Liquibase) antes de qualquer alteração de schema em produção.
+- Autenticação/autorização (hoje a API é totalmente aberta).
+- Paginação em `GET /api/exercises` e histórico de hidratação por período (não só o dia atual).
+- Suporte a múltiplos usuários (hoje os dados de treino e hidratação são globais, sem conceito de usuário).
+- Pipeline de CI (build + testes) no GitHub Actions antes do deploy.

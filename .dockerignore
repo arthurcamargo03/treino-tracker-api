@@ -1,0 +1,9 @@
+target/
+data/
+.git
+.idea
+.mvn
+mvnw
+mvnw.cmd
+*.md
+.DS_Store
