@@ -1,4 +1,4 @@
-package com.treinotracker.model;
+package com.treinotracker.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,11 +11,19 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "set_logs")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class SetLog {
 
     @Id
@@ -47,9 +55,6 @@ public class SetLog {
     @Column(nullable = false)
     private LocalDate date;
 
-    protected SetLog() {
-    }
-
     public SetLog(Exercise exercise, int week, double weight, int reps, int sets, LocalDate date) {
         this.exercise = exercise;
         this.week = week;
@@ -57,34 +62,6 @@ public class SetLog {
         this.reps = reps;
         this.sets = sets;
         this.date = date;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public Exercise getExercise() {
-        return exercise;
-    }
-
-    public int getWeek() {
-        return week;
-    }
-
-    public double getWeight() {
-        return weight;
-    }
-
-    public int getReps() {
-        return reps;
-    }
-
-    public int getSets() {
-        return sets;
-    }
-
-    public LocalDate getDate() {
-        return date;
     }
 
     public double volume() {

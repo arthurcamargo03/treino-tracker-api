@@ -1,7 +1,7 @@
 package com.treinotracker.service;
 
-import com.treinotracker.model.Exercise;
-import com.treinotracker.model.SetLog;
+import com.treinotracker.entity.Exercise;
+import com.treinotracker.entity.SetLog;
 import com.treinotracker.repository.ExerciseRepository;
 import com.treinotracker.repository.SetLogRepository;
 import org.springframework.stereotype.Service;

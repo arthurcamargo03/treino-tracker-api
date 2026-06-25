@@ -1,4 +1,4 @@
-package com.treinotracker.model;
+package com.treinotracker.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,9 +8,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "exercises", uniqueConstraints = @UniqueConstraint(columnNames = "name"))
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Exercise {
 
     @Id
@@ -25,31 +33,8 @@ public class Exercise {
     @Column(name = "muscle_group", nullable = false)
     private String muscleGroup;
 
-    protected Exercise() {
-    }
-
     public Exercise(String name, String muscleGroup) {
         this.name = name;
-        this.muscleGroup = muscleGroup;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getMuscleGroup() {
-        return muscleGroup;
-    }
-
-    public void setMuscleGroup(String muscleGroup) {
         this.muscleGroup = muscleGroup;
     }
 }
