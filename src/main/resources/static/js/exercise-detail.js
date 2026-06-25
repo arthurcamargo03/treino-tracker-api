@@ -66,11 +66,16 @@ function renderTable(progression) {
 
 function renderChart(progression) {
     const ctx = document.getElementById('rm-chart');
+    const styles = getComputedStyle(document.documentElement);
+    const accent = styles.getPropertyValue('--accent').trim() || '#10B981';
+    const accentFill = 'rgba(16, 185, 129, 0.10)';
     const labels = progression.map((week) => `Semana ${week.week}`);
     const data = progression.map((week) => week.estimated1RM);
     const pointColors = progression.map((week) => {
-        if (week.trendPercent === null) return '#6c757d';
-        return week.trendPercent > 0 ? '#198754' : '#dc3545';
+        if (week.trendPercent === null) return styles.getPropertyValue('--faint').trim() || '#94A3B8';
+        return week.trendPercent > 0
+            ? styles.getPropertyValue('--progress-positive').trim() || '#16A34A'
+            : styles.getPropertyValue('--progress-negative').trim() || '#DC2626';
     });
 
     if (rmChart) {
@@ -88,8 +93,8 @@ function renderChart(progression) {
             datasets: [{
                 label: '1RM estimado (kg)',
                 data,
-                borderColor: '#0d6efd',
-                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                borderColor: accent,
+                backgroundColor: accentFill,
                 pointBackgroundColor: pointColors,
                 pointRadius: 5,
                 tension: 0.3,

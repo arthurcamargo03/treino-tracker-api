@@ -1,0 +1,274 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
+
+:root {
+    --ink: #0F172A;
+    --muted: #475569;
+    --faint: #94A3B8;
+    --bg: #F8FAFC;
+    --surface: #FFFFFF;
+    --border: #E2E8F0;
+    --accent: #10B981;
+    --accent-hover: #059669;
+    --progress-positive: #16A34A;
+    --progress-warning: #D97706;
+    --progress-negative: #DC2626;
+    --shadow-subtle: 0 1px 3px rgba(15, 23, 42, 0.06);
+
+    --bs-primary: var(--accent);
+    --bs-primary-rgb: 16, 185, 129;
+    --bs-secondary: var(--muted);
+    --bs-secondary-rgb: 71, 85, 105;
+    --bs-success: var(--accent);
+    --bs-success-rgb: 16, 185, 129;
+    --bs-warning: var(--muted);
+    --bs-warning-rgb: 71, 85, 105;
+    --bs-danger: var(--muted);
+    --bs-danger-rgb: 71, 85, 105;
+    --bs-body-bg: var(--bg);
+    --bs-body-color: var(--ink);
+    --bs-body-font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --bs-body-font-size: 15px;
+    --bs-body-font-weight: 400;
+    --bs-border-color: var(--border);
+    --bs-border-radius: 12px;
+    --bs-border-radius-sm: 10px;
+    --bs-border-radius-lg: 14px;
+    --bs-link-color: var(--accent-hover);
+    --bs-link-hover-color: var(--accent);
+    --bs-focus-ring-color: rgba(16, 185, 129, 0.22);
+    --bs-box-shadow-sm: var(--shadow-subtle);
+}
+
+body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--bs-body-font-family);
+    font-size: 15px;
+    font-weight: 400;
+}
+
+h1,
+.h3 {
+    color: var(--ink);
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0;
+}
+
+h2,
+h3,
+.h5,
+.h6,
+.card-title {
+    color: var(--ink);
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: 0;
+}
+
+.text-muted,
+small,
+.small {
+    color: var(--muted) !important;
+}
+
+.form-label {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.navbar {
+    background: var(--ink) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+}
+
+.navbar-brand {
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.74);
+}
+
+.navbar-dark .navbar-nav .nav-link:hover,
+.navbar-dark .navbar-nav .nav-link:focus {
+    color: #FFFFFF;
+}
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--bs-border-radius);
+    box-shadow: var(--shadow-subtle) !important;
+}
+
+.shadow-sm {
+    box-shadow: var(--shadow-subtle) !important;
+}
+
+.exercise-card {
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.exercise-card:hover {
+    border-color: rgba(16, 185, 129, 0.35);
+    box-shadow: var(--shadow-subtle) !important;
+    transform: none;
+}
+
+.btn {
+    border-radius: var(--bs-border-radius);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0;
+    box-shadow: none !important;
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--accent);
+    --bs-btn-border-color: var(--accent);
+    --bs-btn-hover-bg: var(--accent-hover);
+    --bs-btn-hover-border-color: var(--accent-hover);
+    --bs-btn-active-bg: var(--accent-hover);
+    --bs-btn-active-border-color: var(--accent-hover);
+    --bs-btn-disabled-bg: var(--faint);
+    --bs-btn-disabled-border-color: var(--faint);
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--accent-hover);
+    --bs-btn-border-color: rgba(16, 185, 129, 0.45);
+    --bs-btn-hover-bg: var(--accent);
+    --bs-btn-hover-border-color: var(--accent);
+    --bs-btn-active-bg: var(--accent-hover);
+    --bs-btn-active-border-color: var(--accent-hover);
+}
+
+.btn-link {
+    color: var(--accent-hover);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.btn-link:hover,
+.btn-link:focus {
+    color: var(--accent);
+}
+
+.form-control,
+.form-select {
+    background-color: var(--surface);
+    border-color: var(--border);
+    border-radius: var(--bs-border-radius);
+    color: var(--ink);
+    font-size: 15px;
+}
+
+.form-control::placeholder,
+.form-select:invalid {
+    color: var(--faint);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16);
+}
+
+.table {
+    --bs-table-color: var(--ink);
+    --bs-table-striped-bg: rgba(226, 232, 240, 0.28);
+    --bs-table-border-color: var(--border);
+    font-size: 15px;
+}
+
+.table thead th {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.badge {
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.bg-secondary {
+    background-color: var(--muted) !important;
+}
+
+.bg-light {
+    background-color: var(--bg) !important;
+    border: 1px solid var(--border);
+}
+
+.bg-success {
+    background-color: var(--accent) !important;
+}
+
+.bg-warning {
+    background-color: var(--muted) !important;
+}
+
+.bg-danger {
+    background-color: var(--muted) !important;
+}
+
+#trend-badge.bg-success,
+[id^="trend-badge-"].bg-success {
+    background-color: var(--progress-positive) !important;
+}
+
+#trend-badge.bg-warning,
+[id^="trend-badge-"].bg-warning {
+    background-color: var(--progress-warning) !important;
+}
+
+#trend-badge.bg-danger,
+[id^="trend-badge-"].bg-danger {
+    background-color: var(--progress-negative) !important;
+}
+
+.alert {
+    border: 1px solid var(--border);
+    border-radius: var(--bs-border-radius);
+    box-shadow: var(--shadow-subtle);
+}
+
+.alert-danger {
+    background-color: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.22);
+    color: #991B1B;
+}
+
+.alert-success {
+    background-color: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.24);
+    color: #047857;
+}
+
+.border-bottom {
+    border-color: var(--border) !important;
+}
+
+.water-ring-wrapper {
+    filter: drop-shadow(var(--shadow-subtle));
+}
+
+.ring-track {
+    stroke: var(--border);
+}
+
+.ring-progress {
+    stroke: var(--accent);
+}
