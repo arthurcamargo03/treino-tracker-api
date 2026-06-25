@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface SetLogRepository extends JpaRepository<SetLog, Long> {
 
-    List<SetLog> findByExercise_NameIgnoreCaseOrderByWeekAsc(String exerciseName);
+    List<SetLog> findByExerciseIdOrderByWeekAsc(Long exerciseId);
 }

@@ -29,7 +29,7 @@ public class WorkoutService {
     }
 
     public boolean exerciseExists(String name) {
-        return exerciseRepository.existsByNameIgnoreCase(name);
+        return exerciseRepository.findByNameIgnoreCase(name).isPresent();
     }
 
     @Transactional
@@ -49,7 +49,9 @@ public class WorkoutService {
     }
 
     public List<SetLog> getSetsFor(String exerciseName) {
-        return setLogRepository.findByExercise_NameIgnoreCaseOrderByWeekAsc(exerciseName);
+        Exercise exercise = exerciseRepository.findByNameIgnoreCase(exerciseName)
+                .orElseThrow(() -> new IllegalArgumentException("Exercício não encontrado: " + exerciseName));
+        return setLogRepository.findByExerciseIdOrderByWeekAsc(exercise.getId());
     }
 
     public List<WeekSummary> getProgression(String exerciseName) {
