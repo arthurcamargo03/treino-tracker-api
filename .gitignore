@@ -4,6 +4,25 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Java ###
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+### H2 database (modo arquivo) ###
+/data/
+*.mv.db
+*.trace.db
+
+### Logs ###
+*.log
+
+### macOS ###
+.DS_Store
+
 ### STS ###
 .apt_generated
 .classpath
