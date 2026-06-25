@@ -34,6 +34,12 @@ public class WaterController {
         this.waterService = waterService;
     }
 
+    @GetMapping("/settings")
+    @Operation(summary = "Retorna a meta diária e o tamanho de garrafa configurados atualmente")
+    public ResponseEntity<SettingsResponse> getSettings() {
+        return ResponseEntity.ok(SettingsResponse.from(waterService.getSettings()));
+    }
+
     @GetMapping("/today")
     @Operation(summary = "Retorna o registro de hidratação de hoje", description = "Cria o registro do dia com a meta atual caso ainda não exista")
     public ResponseEntity<WaterLogResponse> today() {

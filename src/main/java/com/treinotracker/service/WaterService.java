@@ -65,7 +65,7 @@ public class WaterService {
         return settingsRepository.save(settings);
     }
 
-    private Settings getSettings() {
+    public Settings getSettings() {
         return settingsRepository.findFirstByOrderByIdAsc()
                 .orElseGet(() -> settingsRepository.save(new Settings(DEFAULT_DAILY_GOAL_ML, DEFAULT_BOTTLE_SIZE_ML)));
     }
