@@ -99,6 +99,10 @@ function renderExerciseGroups(trainingDays, exercises) {
         container.innerHTML = '<p class="text-muted">Cadastre um treino para começar a organizar seus exercícios.</p>';
         return;
     }
+    if (exercises.length === 0) {
+        container.innerHTML = '<div class="empty-state">Nenhum exercício ainda — adicione o primeiro acima.</div>';
+        return;
+    }
 
     const exercisesByDay = new Map();
     exercises.forEach((exercise) => {
@@ -134,21 +138,21 @@ function groupHtml(day, exercises) {
                 ${escapeHtml(day.name)}
                 <small class="text-muted">${capitalize(day.dayOfWeekLabel)}</small>
             </h2>
-            <div class="row g-3">${cards}</div>
+            <div class="exercise-grid">${cards}</div>
         </section>`;
 }
 
 function cardHtml(exercise) {
     return `
-        <div class="col-md-4">
-            <div class="card exercise-card shadow-sm h-100" data-id="${exercise.id}">
-                <div class="card-body">
-                    <h3 class="h5 mb-1">${escapeHtml(exercise.name)}</h3>
-                    <span class="badge bg-secondary">${escapeHtml(exercise.muscleGroup)}</span>
-                    <span class="badge bg-light text-muted ms-1 d-none" id="trend-badge-${exercise.id}">...</span>
+        <article class="card exercise-card" data-id="${exercise.id}">
+            <div class="card-body">
+                <h3 class="h5 mb-1">${escapeHtml(exercise.name)}</h3>
+                <div class="exercise-card-meta">
+                    <span class="badge muscle-badge">${escapeHtml(exercise.muscleGroup)}</span>
+                    <span class="trend-badge is-loading d-none" id="trend-badge-${exercise.id}">...</span>
                 </div>
             </div>
-        </div>`;
+        </article>`;
 }
 
 async function loadTrendBadge(exerciseId) {
@@ -165,17 +169,29 @@ async function loadTrendBadge(exerciseId) {
             badge.remove();
             return;
         }
-        badge.classList.remove('d-none', 'bg-light', 'text-muted');
+        badge.classList.remove('d-none', 'is-loading', 'trend-positive', 'trend-warning', 'trend-negative');
         if (last.trendPercent > 0) {
-            badge.classList.add('bg-success');
-            badge.textContent = `📈 Progredindo +${last.trendPercent.toFixed(1)}%`;
+            badge.classList.add('trend-positive');
+            badge.innerHTML = `${trendIcon('up')} Progredindo +${last.trendPercent.toFixed(1)}%`;
+        } else if (last.trendPercent < 0) {
+            badge.classList.add('trend-negative');
+            badge.innerHTML = `${trendIcon('down')} Queda ${last.trendPercent.toFixed(1)}%`;
         } else {
-            badge.classList.add('bg-warning', 'text-dark');
-            badge.textContent = `Sem progresso ${last.trendPercent.toFixed(1)}%`;
+            badge.classList.add('trend-warning');
+            badge.innerHTML = `${trendIcon('flat')} Sem progresso ${last.trendPercent.toFixed(1)}%`;
         }
     } catch {
         badge.remove();
     }
+}
+
+function trendIcon(direction) {
+    const paths = {
+        up: '<path d="M7 17 17 7"/><path d="M7 7h10v10"/>',
+        down: '<path d="m7 7 10 10"/><path d="M17 7v10H7"/>',
+        flat: '<path d="M5 12h14"/><path d="m15 8 4 4-4 4"/>'
+    };
+    return `<svg class="trend-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths[direction]}</svg>`;
 }
 
 function capitalize(str) {

@@ -196,13 +196,113 @@ small,
 }
 
 .exercise-card {
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    border-color: var(--border);
+    border-radius: 14px;
+    box-shadow: none !important;
+    cursor: pointer;
+    height: 100%;
+    min-height: 164px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .exercise-card:hover {
-    border-color: rgba(16, 185, 129, 0.35);
-    box-shadow: var(--shadow-subtle) !important;
-    transform: none;
+    border-color: var(--accent);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08) !important;
+    transform: translateY(-2px);
+}
+
+.exercise-card .card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px;
+}
+
+.exercise-card h3 {
+    overflow-wrap: anywhere;
+}
+
+.exercise-grid {
+    align-items: stretch;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.exercise-grid .exercise-card {
+    min-height: 164px;
+}
+
+.exercise-card-meta {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.muscle-badge {
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+}
+
+.trend-badge {
+    align-items: center;
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 600;
+    gap: 5px;
+    line-height: 1;
+    padding: 7px 10px;
+}
+
+.badge.trend-positive,
+.badge.trend-warning,
+.badge.trend-negative {
+    align-items: center;
+    display: inline-flex;
+    gap: 6px;
+}
+
+.trend-badge.is-loading {
+    background-color: var(--bg);
+    color: var(--muted);
+}
+
+.trend-icon {
+    flex: 0 0 auto;
+    height: 14px;
+    width: 14px;
+}
+
+.trend-positive {
+    background-color: rgba(22, 163, 74, 0.12) !important;
+    color: var(--progress-positive) !important;
+}
+
+.trend-warning {
+    background-color: rgba(217, 119, 6, 0.12) !important;
+    color: var(--progress-warning) !important;
+}
+
+.trend-negative {
+    background-color: rgba(220, 38, 38, 0.12) !important;
+    color: var(--progress-negative) !important;
+}
+
+.empty-state {
+    align-items: center;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    color: var(--muted);
+    display: flex;
+    justify-content: center;
+    min-height: 132px;
+    padding: 24px;
+    text-align: center;
 }
 
 .btn {

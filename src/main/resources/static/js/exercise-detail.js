@@ -59,9 +59,22 @@ function renderTable(progression) {
             <td>${week.reps}</td>
             <td>${week.sets}</td>
             <td>${week.estimated1RM.toFixed(1)} kg</td>
-            <td>${week.trendPercent === null ? '—' : (week.trendPercent > 0 ? '📈 ' : '📉 ') + week.trendPercent.toFixed(1) + '%'}</td>
+            <td>${formatTrendCell(week.trendPercent)}</td>
         </tr>
     `).join('');
+}
+
+function formatTrendCell(trendPercent) {
+    if (trendPercent === null) {
+        return '—';
+    }
+    if (trendPercent > 0) {
+        return `Alta +${trendPercent.toFixed(1)}%`;
+    }
+    if (trendPercent < 0) {
+        return `Queda ${trendPercent.toFixed(1)}%`;
+    }
+    return `Sem progresso ${trendPercent.toFixed(1)}%`;
 }
 
 function renderChart(progression) {
@@ -116,15 +129,27 @@ function renderTrendBadge(progression) {
         return;
     }
     const last = progression[progression.length - 1];
-    badge.classList.remove('d-none', 'bg-success', 'bg-warning', 'bg-secondary', 'text-dark');
+    badge.classList.remove('d-none', 'bg-success', 'bg-warning', 'bg-secondary', 'text-dark', 'trend-positive', 'trend-warning', 'trend-negative');
     if (last.trendPercent === null) {
         badge.classList.add('bg-secondary');
         badge.textContent = 'Primeira semana';
     } else if (last.trendPercent > 0) {
-        badge.classList.add('bg-success');
-        badge.textContent = `📈 Progredindo +${last.trendPercent.toFixed(1)}%`;
+        badge.classList.add('trend-positive');
+        badge.innerHTML = `${trendIcon('up')} Progredindo +${last.trendPercent.toFixed(1)}%`;
+    } else if (last.trendPercent < 0) {
+        badge.classList.add('trend-negative');
+        badge.innerHTML = `${trendIcon('down')} Queda ${last.trendPercent.toFixed(1)}%`;
     } else {
-        badge.classList.add('bg-warning', 'text-dark');
-        badge.textContent = `Sem progresso ${last.trendPercent.toFixed(1)}%`;
+        badge.classList.add('trend-warning');
+        badge.innerHTML = `${trendIcon('flat')} Sem progresso ${last.trendPercent.toFixed(1)}%`;
     }
+}
+
+function trendIcon(direction) {
+    const paths = {
+        up: '<path d="M7 17 17 7"/><path d="M7 7h10v10"/>',
+        down: '<path d="m7 7 10 10"/><path d="M17 7v10H7"/>',
+        flat: '<path d="M5 12h14"/><path d="m15 8 4 4-4 4"/>'
+    };
+    return `<svg class="trend-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths[direction]}</svg>`;
 }
