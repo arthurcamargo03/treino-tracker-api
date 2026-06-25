@@ -1,4 +1,4 @@
-package com.treinotracker.service;
+package com.treinotracker.dto;
 
 public record WeekSummary(
         int week,

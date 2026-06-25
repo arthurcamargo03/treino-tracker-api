@@ -1,7 +1,10 @@
 package com.treinotracker.service;
 
+import com.treinotracker.dto.WeekSummary;
 import com.treinotracker.entity.Exercise;
 import com.treinotracker.entity.SetLog;
+import com.treinotracker.exception.DuplicateResourceException;
+import com.treinotracker.exception.ResourceNotFoundException;
 import com.treinotracker.repository.ExerciseRepository;
 import com.treinotracker.repository.SetLogRepository;
 import org.springframework.stereotype.Service;
@@ -24,39 +27,26 @@ public class WorkoutService {
         this.setLogRepository = setLogRepository;
     }
 
-    public List<Exercise> getExercises() {
-        return exerciseRepository.findAll();
-    }
-
-    public boolean exerciseExists(String name) {
-        return exerciseRepository.findByNameIgnoreCase(name).isPresent();
-    }
-
     @Transactional
     public Exercise addExercise(String name, String group) {
-        if (exerciseExists(name)) {
-            throw new IllegalArgumentException("Exercício já existe: " + name);
+        if (exerciseRepository.findByNameIgnoreCase(name).isPresent()) {
+            throw new DuplicateResourceException("Exercício já existe: " + name);
         }
         return exerciseRepository.save(new Exercise(name, group));
     }
 
     @Transactional
-    public SetLog logSet(String exerciseName, int week, double weight, int reps, int setsCount) {
-        Exercise exercise = exerciseRepository.findByNameIgnoreCase(exerciseName)
-                .orElseThrow(() -> new IllegalArgumentException("Exercício não encontrado: " + exerciseName));
-        SetLog setLog = new SetLog(exercise, week, weight, reps, setsCount, LocalDate.now());
+    public SetLog logSet(Long exerciseId, int week, double weight, int reps, int sets) {
+        Exercise exercise = findExerciseOrThrow(exerciseId);
+        SetLog setLog = new SetLog(exercise, week, weight, reps, sets, LocalDate.now());
         return setLogRepository.save(setLog);
     }
 
-    public List<SetLog> getSetsFor(String exerciseName) {
-        Exercise exercise = exerciseRepository.findByNameIgnoreCase(exerciseName)
-                .orElseThrow(() -> new IllegalArgumentException("Exercício não encontrado: " + exerciseName));
-        return setLogRepository.findByExerciseIdOrderByWeekAsc(exercise.getId());
-    }
+    public List<WeekSummary> getProgression(Long exerciseId) {
+        findExerciseOrThrow(exerciseId);
 
-    public List<WeekSummary> getProgression(String exerciseName) {
         TreeMap<Integer, SetLog> bestPerWeek = new TreeMap<>();
-        for (SetLog set : getSetsFor(exerciseName)) {
+        for (SetLog set : setLogRepository.findByExerciseIdOrderByWeekAsc(exerciseId)) {
             SetLog current = bestPerWeek.get(set.getWeek());
             if (current == null || set.estimated1RM() > current.estimated1RM()) {
                 bestPerWeek.put(set.getWeek(), set);
@@ -83,12 +73,17 @@ public class WorkoutService {
         return summaries;
     }
 
-    public boolean isProgressing(String exerciseName) {
-        List<WeekSummary> progression = getProgression(exerciseName);
+    public boolean isProgressing(Long exerciseId) {
+        List<WeekSummary> progression = getProgression(exerciseId);
         if (progression.isEmpty()) {
             return false;
         }
         WeekSummary last = progression.get(progression.size() - 1);
         return last.trendPercent() != null && last.trendPercent() > 0;
+    }
+
+    private Exercise findExerciseOrThrow(Long exerciseId) {
+        return exerciseRepository.findById(exerciseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Exercício não encontrado: " + exerciseId));
     }
 }
