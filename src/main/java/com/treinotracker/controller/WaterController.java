@@ -6,7 +6,7 @@ import com.treinotracker.dto.SettingsRequest;
 import com.treinotracker.dto.SettingsResponse;
 import com.treinotracker.dto.WaterLogResponse;
 import com.treinotracker.entity.Settings;
-import com.treinotracker.entity.WaterLog;
+import com.treinotracker.service.WaterBottleProgress;
 import com.treinotracker.service.WaterService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -43,7 +43,7 @@ public class WaterController {
     @GetMapping("/today")
     @Operation(summary = "Retorna o registro de hidratação de hoje", description = "Cria o registro do dia com a meta atual caso ainda não exista")
     public ResponseEntity<WaterLogResponse> today() {
-        return ResponseEntity.ok(WaterLogResponse.from(waterService.today()));
+        return ResponseEntity.ok(responseFrom(waterService.todayProgress()));
     }
 
     @PostMapping("/drink")
@@ -55,10 +55,10 @@ public class WaterController {
                     content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public ResponseEntity<WaterLogResponse> drink(@Valid @RequestBody(required = false) DrinkRequest request) {
-        WaterLog log = (request == null || request.ml() == null)
-                ? waterService.drinkBottle()
-                : waterService.drink(request.ml());
-        return ResponseEntity.ok(WaterLogResponse.from(log));
+        WaterBottleProgress progress = (request == null || request.ml() == null)
+                ? waterService.drinkBottleProgress()
+                : waterService.drinkProgress(request.ml());
+        return ResponseEntity.ok(responseFrom(progress));
     }
 
     @PutMapping("/settings")
@@ -71,5 +71,15 @@ public class WaterController {
     public ResponseEntity<SettingsResponse> updateSettings(@Valid @RequestBody SettingsRequest request) {
         Settings settings = waterService.updateSettings(request.dailyGoalMl(), request.bottleSizeMl());
         return ResponseEntity.ok(SettingsResponse.from(settings));
+    }
+
+    private WaterLogResponse responseFrom(WaterBottleProgress progress) {
+        return WaterLogResponse.from(
+                progress.waterLog(),
+                progress.bottleSizeMl(),
+                progress.bottlesForGoal(),
+                progress.completedBottles(),
+                progress.remainingBottles()
+        );
     }
 }

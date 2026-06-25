@@ -31,8 +31,18 @@ public class WaterService {
     }
 
     @Transactional
+    public WaterBottleProgress todayProgress() {
+        return bottleProgress(today());
+    }
+
+    @Transactional
     public WaterLog drinkBottle() {
         return drink(getSettings().getBottleSizeMl());
+    }
+
+    @Transactional
+    public WaterBottleProgress drinkBottleProgress() {
+        return bottleProgress(drinkBottle());
     }
 
     @Transactional
@@ -43,6 +53,11 @@ public class WaterService {
         WaterLog log = today();
         log.setConsumedMl(log.getConsumedMl() + ml);
         return waterLogRepository.save(log);
+    }
+
+    @Transactional
+    public WaterBottleProgress drinkProgress(int ml) {
+        return bottleProgress(drink(ml));
     }
 
     @Transactional
@@ -82,6 +97,21 @@ public class WaterService {
     public Settings getSettings() {
         return settingsRepository.findFirstByOrderByIdAsc()
                 .orElseGet(this::createDefaultSettings);
+    }
+
+    public WaterBottleProgress bottleProgress(WaterLog waterLog) {
+        int bottleSizeMl = getSettings().getBottleSizeMl();
+        int bottlesForGoal = bottlesForGoal(waterLog.getGoalMl(), bottleSizeMl);
+        int remainingBottles = remainingBottles(waterLog.getGoalMl(), waterLog.getConsumedMl(), bottleSizeMl);
+        return new WaterBottleProgress(waterLog, bottleSizeMl, bottlesForGoal, remainingBottles);
+    }
+
+    int bottlesForGoal(int goalMl, int bottleSizeMl) {
+        return (int) Math.ceil(goalMl / (double) bottleSizeMl);
+    }
+
+    int remainingBottles(int goalMl, int consumedMl, int bottleSizeMl) {
+        return Math.max(0, (int) Math.ceil((goalMl - consumedMl) / (double) bottleSizeMl));
     }
 
     private WaterLog createTodayLog(LocalDate date) {

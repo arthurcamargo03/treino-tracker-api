@@ -77,6 +77,44 @@ class WaterServiceTest {
     }
 
     @Test
+    void bottleProgress_calculatesGoalAndRemainingBottles() {
+        WaterLog log = new WaterLog(LocalDate.now(), 2000, 3000);
+        when(settingsRepository.findFirstByOrderByIdAsc())
+                .thenReturn(Optional.of(new Settings(3000, 500)));
+
+        WaterBottleProgress result = waterService.bottleProgress(log);
+
+        assertThat(result.bottleSizeMl()).isEqualTo(500);
+        assertThat(result.bottlesForGoal()).isEqualTo(6);
+        assertThat(result.completedBottles()).isEqualTo(4);
+        assertThat(result.remainingBottles()).isEqualTo(2);
+    }
+
+    @Test
+    void bottleProgress_roundsGoalUp_whenBottleDoesNotDivideGoal() {
+        WaterLog log = new WaterLog(LocalDate.now(), 1200, 3200);
+        when(settingsRepository.findFirstByOrderByIdAsc())
+                .thenReturn(Optional.of(new Settings(3200, 600)));
+
+        WaterBottleProgress result = waterService.bottleProgress(log);
+
+        assertThat(result.bottlesForGoal()).isEqualTo(6);
+        assertThat(result.remainingBottles()).isEqualTo(4);
+    }
+
+    @Test
+    void bottleProgress_neverReturnsNegativeRemainingBottles() {
+        WaterLog log = new WaterLog(LocalDate.now(), 3300, 3000);
+        when(settingsRepository.findFirstByOrderByIdAsc())
+                .thenReturn(Optional.of(new Settings(3000, 500)));
+
+        WaterBottleProgress result = waterService.bottleProgress(log);
+
+        assertThat(result.completedBottles()).isEqualTo(6);
+        assertThat(result.remainingBottles()).isZero();
+    }
+
+    @Test
     void updateSettings_savesBothValuesAtomically() {
         Settings settings = new Settings(3000, 500);
         when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(settings));

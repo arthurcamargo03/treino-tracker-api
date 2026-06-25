@@ -1,4 +1,6 @@
-const RING_CIRCUMFERENCE = 2 * Math.PI * 52;
+const RING_RADIUS = 52;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
 document.addEventListener('DOMContentLoaded', () => {
     loadToday();
@@ -7,8 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('drink-bottle-btn').addEventListener('click', async () => {
         hideAlert();
         try {
-            await Api.postJson('/api/water/drink');
-            loadToday();
+            const today = await Api.postJson('/api/water/drink');
+            updateRing(today);
         } catch (err) {
             showAlert(err.message);
         }
@@ -19,9 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
         hideAlert();
         const ml = Number(document.getElementById('custom-ml').value);
         try {
-            await Api.postJson('/api/water/drink', { ml });
+            const today = await Api.postJson('/api/water/drink', { ml });
             event.target.reset();
-            loadToday();
+            updateRing(today);
         } catch (err) {
             showAlert(err.message);
         }
@@ -65,13 +67,43 @@ async function loadSettings() {
 
 function updateRing(today) {
     const percent = Math.min(today.percent, 100);
-    const offset = RING_CIRCUMFERENCE * (1 - percent / 100);
-    const ring = document.getElementById('ring-progress');
-    ring.style.strokeDasharray = String(RING_CIRCUMFERENCE);
-    ring.style.strokeDashoffset = String(offset);
+    renderBottleSegments(today.bottlesForGoal, today.completedBottles);
 
     document.getElementById('ring-percent').textContent = `${Math.round(today.percent)}%`;
     document.getElementById('ring-amounts').textContent = `${today.consumedMl} / ${today.goalMl} ml`;
+    document.getElementById('bottle-summary').textContent = bottleSummary(today);
 
     document.getElementById('goal-badge').classList.toggle('d-none', !today.goalReached);
+}
+
+function renderBottleSegments(totalSegments, completedSegments) {
+    const group = document.getElementById('ring-segments');
+    group.replaceChildren();
+
+    const safeTotal = Math.max(1, totalSegments);
+    const safeCompleted = Math.min(Math.max(0, completedSegments), safeTotal);
+    const step = RING_CIRCUMFERENCE / safeTotal;
+    const gap = safeTotal > 1 ? Math.min(5, step * 0.18) : 0;
+    const segmentLength = Math.max(1, step - gap);
+
+    for (let index = 0; index < safeTotal; index += 1) {
+        group.appendChild(createSegment(index, segmentLength, gap, index < safeCompleted));
+    }
+}
+
+function createSegment(index, segmentLength, gap, isFilled) {
+    const circle = document.createElementNS(SVG_NS, 'circle');
+    circle.setAttribute('cx', '60');
+    circle.setAttribute('cy', '60');
+    circle.setAttribute('r', String(RING_RADIUS));
+    circle.setAttribute('class', isFilled ? 'ring-segment is-filled' : 'ring-segment');
+    circle.style.strokeDasharray = `${segmentLength} ${RING_CIRCUMFERENCE - segmentLength}`;
+    circle.style.strokeDashoffset = String(-(index * (segmentLength + gap)) - gap / 2);
+    circle.style.animationDelay = isFilled ? `${index * 45}ms` : '0ms';
+    return circle;
+}
+
+function bottleSummary(today) {
+    const verb = today.remainingBottles === 1 ? 'falta' : 'faltam';
+    return `Meta: ${today.bottlesForGoal} garrafas de ${today.bottleSizeMl}ml · ${verb} ${today.remainingBottles}`;
 }

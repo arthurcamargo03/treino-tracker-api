@@ -2,6 +2,7 @@ package com.treinotracker.controller;
 
 import com.treinotracker.entity.Settings;
 import com.treinotracker.entity.WaterLog;
+import com.treinotracker.service.WaterBottleProgress;
 import com.treinotracker.service.WaterService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,23 +32,31 @@ class WaterControllerTest {
 
     @Test
     void today_returnsHydrationProgress() throws Exception {
-        when(waterService.today()).thenReturn(new WaterLog(LocalDate.of(2026, 6, 25), 1500, 3000));
+        when(waterService.todayProgress()).thenReturn(
+                new WaterBottleProgress(new WaterLog(LocalDate.of(2026, 6, 25), 1500, 3000), 500, 6, 3));
 
         mockMvc.perform(get("/api/water/today"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.consumedMl").value(1500))
                 .andExpect(jsonPath("$.goalMl").value(3000))
                 .andExpect(jsonPath("$.percent").value(50.0))
-                .andExpect(jsonPath("$.goalReached").value(false));
+                .andExpect(jsonPath("$.goalReached").value(false))
+                .andExpect(jsonPath("$.bottleSizeMl").value(500))
+                .andExpect(jsonPath("$.bottlesForGoal").value(6))
+                .andExpect(jsonPath("$.completedBottles").value(3))
+                .andExpect(jsonPath("$.remainingBottles").value(3));
     }
 
     @Test
     void drink_usesBottleSize_whenBodyIsMissing() throws Exception {
-        when(waterService.drinkBottle()).thenReturn(new WaterLog(LocalDate.of(2026, 6, 25), 500, 3000));
+        when(waterService.drinkBottleProgress()).thenReturn(
+                new WaterBottleProgress(new WaterLog(LocalDate.of(2026, 6, 25), 500, 3000), 500, 6, 5));
 
         mockMvc.perform(post("/api/water/drink"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.consumedMl").value(500));
+                .andExpect(jsonPath("$.consumedMl").value(500))
+                .andExpect(jsonPath("$.completedBottles").value(1))
+                .andExpect(jsonPath("$.remainingBottles").value(5));
     }
 
     @Test
