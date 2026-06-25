@@ -69,8 +69,7 @@ public class WaterController {
                     content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public ResponseEntity<SettingsResponse> updateSettings(@Valid @RequestBody SettingsRequest request) {
-        waterService.updateDailyGoal(request.dailyGoalMl());
-        Settings settings = waterService.updateBottleSize(request.bottleSizeMl());
+        Settings settings = waterService.updateSettings(request.dailyGoalMl(), request.bottleSizeMl());
         return ResponseEntity.ok(SettingsResponse.from(settings));
     }
 }

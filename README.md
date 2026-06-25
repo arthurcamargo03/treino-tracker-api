@@ -11,18 +11,11 @@ Este projeto é a reescrita, como serviço web, de um app de console em Java ([`
 
 > As URLs acima são preenchidas após o deploy (ver seção [Deploy](#deploy)).
 
-## Prints
-
-| Exercícios | Detalhe + progressão | Hidratação |
-|---|---|---|
-| ![Lista de exercícios](docs/screenshots/exercises.png) | ![Gráfico de 1RM](docs/screenshots/exercise-detail.png) | ![Progresso de hidratação](docs/screenshots/water.png) |
-
-> Capturas a serem adicionadas em `docs/screenshots/` (rode a aplicação localmente e exporte os prints das três páginas).
-
 ## Stack
 
 - **Java 21** + **Spring Boot 3.5** (Web, Data JPA, Validation)
 - **H2** (arquivo local, perfil `dev`) e **PostgreSQL** (perfil `prod`)
+- **Flyway** para migrations versionadas do schema
 - **Thymeleaf** + **Bootstrap 5** + **Chart.js 4** (frontend server-side consumindo a própria API via `fetch`)
 - **springdoc-openapi** (Swagger UI)
 - **JUnit 5 + Mockito + AssertJ** para testes
@@ -37,7 +30,7 @@ graph TD
 
     subgraph "controller"
         PageController
-        Controller["ExerciseController · SetLogController · WaterController"]
+        Controller["TrainingDayController · ExerciseController · SetLogController · WaterController"]
     end
 
     subgraph "service"
@@ -50,10 +43,12 @@ graph TD
         SetLogRepository
         WaterLogRepository
         SettingsRepository
+        TrainingDayRepository
     end
 
     subgraph "entity"
         Exercise
+        TrainingDay
         SetLog
         WaterLog
         Settings
@@ -63,26 +58,30 @@ graph TD
     Controller --> WaterService
     WorkoutService --> ExerciseRepository
     WorkoutService --> SetLogRepository
+    WorkoutService --> TrainingDayRepository
     WaterService --> WaterLogRepository
     WaterService --> SettingsRepository
     ExerciseRepository --> Exercise
     SetLogRepository --> SetLog
     WaterLogRepository --> WaterLog
     SettingsRepository --> Settings
+    TrainingDayRepository --> TrainingDay
 
     DB[(H2 / PostgreSQL)]
+    TrainingDay --> DB
     Exercise --> DB
     SetLog --> DB
     WaterLog --> DB
     Settings --> DB
 ```
 
-Regras de domínio (1RM de Epley, melhor série por semana, `trendPercent`, meta/garrafa de hidratação) ficam isoladas em `service`; `controller` só traduz HTTP ↔ DTO e nunca expõe entidades JPA diretamente.
+Regras de domínio (1RM de Epley, melhor série por semana, `trendPercent`, meta/garrafa de hidratação e organização por treino) ficam isoladas em `service`; `controller` só traduz HTTP ↔ DTO e nunca expõe entidades JPA diretamente.
 
 ### Principais endpoints
 
 | Recurso | Endpoint |
 |---|---|
+| Treinos | `GET/POST /api/training-days` |
 | Exercícios | `GET/POST /api/exercises`, `GET /api/exercises/{id}` |
 | Séries e progressão | `POST /api/exercises/{id}/sets`, `GET /api/exercises/{id}/progression` |
 | Hidratação | `GET /api/water/today`, `POST /api/water/drink`, `GET/PUT /api/water/settings` |
@@ -99,7 +98,7 @@ cd treino-tracker-api
 ./mvnw spring-boot:run
 ```
 
-A aplicação sobe em `http://localhost:8080` usando o perfil `dev` (padrão), com H2 em modo arquivo (dados persistidos em `./data/`). Console do H2 em `/h2-console` (JDBC URL `jdbc:h2:file:./data/treinotracker`, usuário `sa`, sem senha).
+A aplicação sobe em `http://localhost:8080` usando o perfil `dev` (padrão), com H2 em modo arquivo (dados persistidos em `./data/`). O schema é criado pelo Flyway e validado pelo Hibernate. Console do H2 em `/h2-console` (JDBC URL `jdbc:h2:file:./data/treinotracker`, usuário `sa`, sem senha).
 
 - Frontend: `http://localhost:8080/exercises` e `http://localhost:8080/water`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
@@ -129,8 +128,8 @@ Por padrão o container também sobe no perfil `dev` (H2 dentro do próprio cont
 
 Perfis disponíveis:
 
-- **`dev`** (`application-dev.properties`) — H2 em arquivo, console habilitado. Usado localmente.
-- **`prod`** (`application-prod.properties`) — PostgreSQL via variáveis de ambiente, console do H2 desabilitado.
+- **`dev`** (`application-dev.properties`) — H2 em arquivo, console habilitado, schema via Flyway.
+- **`prod`** (`application-prod.properties`) — PostgreSQL via variáveis de ambiente, schema via Flyway, console do H2 desabilitado.
 
 O perfil `prod` lê a conexão exclusivamente de variáveis de ambiente (nunca de valores hardcoded no repositório):
 
@@ -161,7 +160,6 @@ O repositório inclui um `render.yaml` (Blueprint) que provisiona um banco Postg
 
 ## Próximos passos
 
-- Trocar `ddl-auto=update` por migrations versionadas (Flyway/Liquibase) antes de qualquer alteração de schema em produção.
 - Autenticação/autorização (hoje a API é totalmente aberta).
 - Paginação em `GET /api/exercises` e histórico de hidratação por período (não só o dia atual).
 - Suporte a múltiplos usuários (hoje os dados de treino e hidratação são globais, sem conceito de usuário).

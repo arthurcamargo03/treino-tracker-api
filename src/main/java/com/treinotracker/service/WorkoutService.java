@@ -35,11 +35,11 @@ public class WorkoutService {
     }
 
     public List<Exercise> getExercises() {
-        return exerciseRepository.findAll();
+        return exerciseRepository.findAllWithTrainingDay();
     }
 
     public Exercise getExercise(Long exerciseId) {
-        return findExerciseOrThrow(exerciseId);
+        return findExerciseWithTrainingDayOrThrow(exerciseId);
     }
 
     @Transactional
@@ -67,6 +67,10 @@ public class WorkoutService {
 
     @Transactional
     public SetLog logSet(Long exerciseId, int week, double weight, int reps, int sets) {
+        validatePositive(week, "Semana");
+        validatePositive(weight, "Carga");
+        validatePositive(reps, "Repetições");
+        validatePositive(sets, "Séries");
         Exercise exercise = findExerciseOrThrow(exerciseId);
         SetLog setLog = new SetLog(exercise, week, weight, reps, sets, LocalDate.now());
         return setLogRepository.save(setLog);
@@ -117,8 +121,19 @@ public class WorkoutService {
                 .orElseThrow(() -> new ResourceNotFoundException("Exercício não encontrado: " + exerciseId));
     }
 
+    private Exercise findExerciseWithTrainingDayOrThrow(Long exerciseId) {
+        return exerciseRepository.findByIdWithTrainingDay(exerciseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Exercício não encontrado: " + exerciseId));
+    }
+
     private TrainingDay findTrainingDayOrThrow(Long trainingDayId) {
         return trainingDayRepository.findById(trainingDayId)
                 .orElseThrow(() -> new ResourceNotFoundException("Treino não encontrado: " + trainingDayId));
+    }
+
+    private void validatePositive(double value, String field) {
+        if (value <= 0) {
+            throw new IllegalArgumentException(field + " deve ser positiva: " + value);
+        }
     }
 }

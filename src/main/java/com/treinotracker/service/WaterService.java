@@ -27,7 +27,7 @@ public class WaterService {
     public WaterLog today() {
         LocalDate date = LocalDate.now();
         return waterLogRepository.findByDate(date)
-                .orElseGet(() -> waterLogRepository.save(new WaterLog(date, 0, getSettings().getDailyGoalMl())));
+                .orElseGet(() -> createTodayLog(date));
     }
 
     @Transactional
@@ -65,8 +65,36 @@ public class WaterService {
         return settingsRepository.save(settings);
     }
 
+    @Transactional
+    public Settings updateSettings(int dailyGoalMl, int bottleSizeMl) {
+        if (dailyGoalMl <= 0) {
+            throw new IllegalArgumentException("Meta diária deve ser positiva: " + dailyGoalMl);
+        }
+        if (bottleSizeMl <= 0) {
+            throw new IllegalArgumentException("Tamanho da garrafa deve ser positivo: " + bottleSizeMl);
+        }
+        Settings settings = getSettings();
+        settings.setDailyGoalMl(dailyGoalMl);
+        settings.setBottleSizeMl(bottleSizeMl);
+        return settingsRepository.save(settings);
+    }
+
     public Settings getSettings() {
         return settingsRepository.findFirstByOrderByIdAsc()
-                .orElseGet(() -> settingsRepository.save(new Settings(DEFAULT_DAILY_GOAL_ML, DEFAULT_BOTTLE_SIZE_ML)));
+                .orElseGet(this::createDefaultSettings);
+    }
+
+    private WaterLog createTodayLog(LocalDate date) {
+        synchronized (this) {
+            return waterLogRepository.findByDate(date)
+                    .orElseGet(() -> waterLogRepository.save(new WaterLog(date, 0, getSettings().getDailyGoalMl())));
+        }
+    }
+
+    private Settings createDefaultSettings() {
+        synchronized (this) {
+            return settingsRepository.findFirstByOrderByIdAsc()
+                    .orElseGet(() -> settingsRepository.save(new Settings(DEFAULT_DAILY_GOAL_ML, DEFAULT_BOTTLE_SIZE_ML)));
+        }
     }
 }
