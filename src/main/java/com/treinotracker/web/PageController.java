@@ -14,18 +14,21 @@ public class PageController {
     }
 
     @GetMapping("/exercises")
-    public String exercises() {
+    public String exercises(Model model) {
+        model.addAttribute("currentPage", "exercises");
         return "exercises";
     }
 
     @GetMapping("/exercises/{id}")
     public String exerciseDetail(@PathVariable Long id, Model model) {
         model.addAttribute("exerciseId", id);
+        model.addAttribute("currentPage", "exercises");
         return "exercise-detail";
     }
 
     @GetMapping("/water")
-    public String water() {
+    public String water(Model model) {
+        model.addAttribute("currentPage", "water");
         return "water";
     }
 }

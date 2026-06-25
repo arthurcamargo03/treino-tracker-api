@@ -1,13 +1,20 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+<nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
-        <a class="navbar-brand" href="/exercises">🏋️ Treino Tracker</a>
+        <a class="navbar-brand" href="/exercises">
+            <span class="brand-mark" aria-hidden="true">🏋️</span>
+            <span>Treino Tracker</span>
+        </a>
         <div class="navbar-nav">
-            <a class="nav-link" href="/exercises">Exercícios</a>
-            <a class="nav-link" href="/water">Hidratação</a>
-            <a class="nav-link" href="/swagger-ui.html" target="_blank">API</a>
+            <a class="nav-link" href="/exercises"
+               th:classappend="${currentPage == 'exercises'} ? ' active' : ''"
+               th:attr="aria-current=${currentPage == 'exercises'} ? 'page' : null">Exercícios</a>
+            <a class="nav-link" href="/water"
+               th:classappend="${currentPage == 'water'} ? ' active' : ''"
+               th:attr="aria-current=${currentPage == 'water'} ? 'page' : null">Hidratação</a>
+            <a class="nav-link" href="/swagger-ui.html" target="_blank">API docs</a>
         </div>
     </div>
 </nav>
