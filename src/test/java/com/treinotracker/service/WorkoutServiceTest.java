@@ -3,16 +3,19 @@ package com.treinotracker.service;
 import com.treinotracker.dto.WeekSummary;
 import com.treinotracker.entity.Exercise;
 import com.treinotracker.entity.SetLog;
+import com.treinotracker.entity.TrainingDay;
 import com.treinotracker.exception.DuplicateResourceException;
 import com.treinotracker.exception.ResourceNotFoundException;
 import com.treinotracker.repository.ExerciseRepository;
 import com.treinotracker.repository.SetLogRepository;
+import com.treinotracker.repository.TrainingDayRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -34,11 +37,14 @@ class WorkoutServiceTest {
     @Mock
     private SetLogRepository setLogRepository;
 
+    @Mock
+    private TrainingDayRepository trainingDayRepository;
+
     private WorkoutService workoutService;
 
     @BeforeEach
     void setUp() {
-        workoutService = new WorkoutService(exerciseRepository, setLogRepository);
+        workoutService = new WorkoutService(exerciseRepository, setLogRepository, trainingDayRepository);
     }
 
     private static Exercise exerciseWithId(Long id, String name, String muscleGroup) {
@@ -47,15 +53,24 @@ class WorkoutServiceTest {
         return exercise;
     }
 
+    private static TrainingDay trainingDayWithId(Long id, String name, DayOfWeek dayOfWeek) {
+        TrainingDay trainingDay = new TrainingDay(name, dayOfWeek);
+        trainingDay.setId(id);
+        return trainingDay;
+    }
+
     @Test
     void addExercise_savesNewExercise_whenNameNotDuplicate() {
+        TrainingDay trainingDay = trainingDayWithId(1L, "Treino A — Peito", DayOfWeek.MONDAY);
         when(exerciseRepository.findByNameIgnoreCase("Supino reto")).thenReturn(Optional.empty());
+        when(trainingDayRepository.findById(1L)).thenReturn(Optional.of(trainingDay));
         when(exerciseRepository.save(any(Exercise.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Exercise result = workoutService.addExercise("Supino reto", "Peito");
+        Exercise result = workoutService.addExercise("Supino reto", "Peito", 1L);
 
         assertThat(result.getName()).isEqualTo("Supino reto");
         assertThat(result.getMuscleGroup()).isEqualTo("Peito");
+        assertThat(result.getTrainingDay()).isEqualTo(trainingDay);
         verify(exerciseRepository).save(any(Exercise.class));
     }
 
@@ -64,10 +79,43 @@ class WorkoutServiceTest {
         when(exerciseRepository.findByNameIgnoreCase("Supino reto"))
                 .thenReturn(Optional.of(exerciseWithId(1L, "Supino reto", "Peito")));
 
-        assertThatThrownBy(() -> workoutService.addExercise("Supino reto", "Peito"))
+        assertThatThrownBy(() -> workoutService.addExercise("Supino reto", "Peito", 1L))
                 .isInstanceOf(DuplicateResourceException.class);
 
         verify(exerciseRepository, never()).save(any());
+    }
+
+    @Test
+    void addExercise_throwsResourceNotFoundException_whenTrainingDayMissing() {
+        when(exerciseRepository.findByNameIgnoreCase("Supino reto")).thenReturn(Optional.empty());
+        when(trainingDayRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> workoutService.addExercise("Supino reto", "Peito", 99L))
+                .isInstanceOf(ResourceNotFoundException.class);
+
+        verify(exerciseRepository, never()).save(any());
+    }
+
+    @Test
+    void addTrainingDay_savesNewTrainingDay_whenNameNotDuplicate() {
+        when(trainingDayRepository.findByNameIgnoreCase("Treino A — Peito")).thenReturn(Optional.empty());
+        when(trainingDayRepository.save(any(TrainingDay.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        TrainingDay result = workoutService.addTrainingDay("Treino A — Peito", DayOfWeek.MONDAY);
+
+        assertThat(result.getName()).isEqualTo("Treino A — Peito");
+        assertThat(result.getDayOfWeek()).isEqualTo(DayOfWeek.MONDAY);
+    }
+
+    @Test
+    void addTrainingDay_throwsDuplicateResourceException_whenNameAlreadyExists() {
+        when(trainingDayRepository.findByNameIgnoreCase("Treino A — Peito"))
+                .thenReturn(Optional.of(trainingDayWithId(1L, "Treino A — Peito", DayOfWeek.MONDAY)));
+
+        assertThatThrownBy(() -> workoutService.addTrainingDay("Treino A — Peito", DayOfWeek.MONDAY))
+                .isInstanceOf(DuplicateResourceException.class);
+
+        verify(trainingDayRepository, never()).save(any());
     }
 
     @Test

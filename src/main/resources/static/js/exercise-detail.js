@@ -27,7 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadExercise(exerciseId) {
     try {
         const exercise = await Api.get(`/api/exercises/${exerciseId}`);
-        document.getElementById('exercise-title').textContent = `${exercise.name} · ${exercise.muscleGroup}`;
+        document.getElementById('exercise-title').textContent =
+            `${exercise.name} · ${exercise.muscleGroup} · ${exercise.trainingDay.name}`;
     } catch (err) {
         document.getElementById('exercise-title').textContent = 'Exercício não encontrado';
         showAlert(err.message);

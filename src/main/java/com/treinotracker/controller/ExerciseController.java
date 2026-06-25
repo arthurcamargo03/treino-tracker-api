@@ -50,10 +50,12 @@ public class ExerciseController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos",
                     content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "Já existe um exercício com esse nome",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Treino (trainingDayId) não encontrado",
                     content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public ResponseEntity<ExerciseResponse> create(@Valid @RequestBody ExerciseRequest request) {
-        Exercise exercise = workoutService.addExercise(request.name(), request.muscleGroup());
+        Exercise exercise = workoutService.addExercise(request.name(), request.muscleGroup(), request.trainingDayId());
         return ResponseEntity.created(URI.create("/api/exercises/" + exercise.getId()))
                 .body(ExerciseResponse.from(exercise));
     }

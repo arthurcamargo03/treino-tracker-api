@@ -3,15 +3,19 @@ package com.treinotracker.service;
 import com.treinotracker.dto.WeekSummary;
 import com.treinotracker.entity.Exercise;
 import com.treinotracker.entity.SetLog;
+import com.treinotracker.entity.TrainingDay;
 import com.treinotracker.exception.DuplicateResourceException;
 import com.treinotracker.exception.ResourceNotFoundException;
 import com.treinotracker.repository.ExerciseRepository;
 import com.treinotracker.repository.SetLogRepository;
+import com.treinotracker.repository.TrainingDayRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -21,10 +25,13 @@ public class WorkoutService {
 
     private final ExerciseRepository exerciseRepository;
     private final SetLogRepository setLogRepository;
+    private final TrainingDayRepository trainingDayRepository;
 
-    public WorkoutService(ExerciseRepository exerciseRepository, SetLogRepository setLogRepository) {
+    public WorkoutService(ExerciseRepository exerciseRepository, SetLogRepository setLogRepository,
+                           TrainingDayRepository trainingDayRepository) {
         this.exerciseRepository = exerciseRepository;
         this.setLogRepository = setLogRepository;
+        this.trainingDayRepository = trainingDayRepository;
     }
 
     public List<Exercise> getExercises() {
@@ -36,11 +43,26 @@ public class WorkoutService {
     }
 
     @Transactional
-    public Exercise addExercise(String name, String group) {
+    public Exercise addExercise(String name, String group, Long trainingDayId) {
         if (exerciseRepository.findByNameIgnoreCase(name).isPresent()) {
             throw new DuplicateResourceException("Exercício já existe: " + name);
         }
-        return exerciseRepository.save(new Exercise(name, group));
+        TrainingDay trainingDay = findTrainingDayOrThrow(trainingDayId);
+        return exerciseRepository.save(new Exercise(name, group, trainingDay));
+    }
+
+    public List<TrainingDay> getTrainingDays() {
+        return trainingDayRepository.findAll().stream()
+                .sorted(Comparator.comparingInt(day -> day.getDayOfWeek().getValue()))
+                .toList();
+    }
+
+    @Transactional
+    public TrainingDay addTrainingDay(String name, DayOfWeek dayOfWeek) {
+        if (trainingDayRepository.findByNameIgnoreCase(name).isPresent()) {
+            throw new DuplicateResourceException("Treino já existe: " + name);
+        }
+        return trainingDayRepository.save(new TrainingDay(name, dayOfWeek));
     }
 
     @Transactional
@@ -93,5 +115,10 @@ public class WorkoutService {
     private Exercise findExerciseOrThrow(Long exerciseId) {
         return exerciseRepository.findById(exerciseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Exercício não encontrado: " + exerciseId));
+    }
+
+    private TrainingDay findTrainingDayOrThrow(Long trainingDayId) {
+        return trainingDayRepository.findById(trainingDayId)
+                .orElseThrow(() -> new ResourceNotFoundException("Treino não encontrado: " + trainingDayId));
     }
 }
