@@ -262,7 +262,8 @@ small,
 
 .badge.trend-positive,
 .badge.trend-warning,
-.badge.trend-negative {
+.badge.trend-negative,
+.badge.trend-neutral {
     align-items: center;
     display: inline-flex;
     gap: 6px;
@@ -292,6 +293,11 @@ small,
 .trend-negative {
     background-color: rgba(220, 38, 38, 0.12) !important;
     color: var(--progress-negative) !important;
+}
+
+.trend-neutral {
+    background-color: rgba(148, 163, 184, 0.14) !important;
+    color: var(--muted) !important;
 }
 
 .empty-state {
@@ -418,6 +424,58 @@ small,
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+}
+
+.progression-table {
+    --bs-table-striped-bg: rgba(226, 232, 240, 0.18);
+    margin-bottom: 0;
+}
+
+.progression-table > :not(caption) > * > * {
+    padding: 10px 12px;
+}
+
+.progression-table tbody td {
+    color: var(--ink);
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.progression-table tbody tr:hover {
+    --bs-table-bg-state: rgba(16, 185, 129, 0.04);
+}
+
+.trend-cell {
+    align-items: center;
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 600;
+    gap: 5px;
+    line-height: 1;
+    padding: 6px 9px;
+    white-space: nowrap;
+}
+
+.chart-card {
+    gap: 18px;
+}
+
+.chart-heading {
+    align-items: flex-start;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+.chart-frame {
+    height: 320px;
+    min-height: 320px;
+    position: relative;
+}
+
+.chart-frame canvas {
+    display: block;
 }
 
 .badge {

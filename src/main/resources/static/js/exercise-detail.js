@@ -68,38 +68,57 @@ function renderTable(progression) {
 
 function formatTrendCell(trendPercent) {
     if (trendPercent === null) {
-        return '—';
+        return '<span class="trend-cell trend-neutral">Primeira</span>';
     }
     if (trendPercent > 0) {
-        return `Alta +${trendPercent.toFixed(1)}%`;
+        return `<span class="trend-cell trend-positive">${trendIcon('up')} +${trendPercent.toFixed(1)}%</span>`;
     }
     if (trendPercent < 0) {
-        return `Queda ${trendPercent.toFixed(1)}%`;
+        return `<span class="trend-cell trend-negative">${trendIcon('down')} ${trendPercent.toFixed(1)}%</span>`;
     }
-    return `Sem progresso ${trendPercent.toFixed(1)}%`;
+    return `<span class="trend-cell trend-warning">${trendIcon('flat')} ${trendPercent.toFixed(1)}%</span>`;
 }
 
 function renderChart(progression) {
     const ctx = document.getElementById('rm-chart');
     const styles = getComputedStyle(document.documentElement);
     const accent = styles.getPropertyValue('--accent').trim() || '#10B981';
-    const accentFill = 'rgba(16, 185, 129, 0.10)';
+    const ink = styles.getPropertyValue('--ink').trim() || '#0F172A';
+    const muted = styles.getPropertyValue('--muted').trim() || '#475569';
+    const border = styles.getPropertyValue('--border').trim() || '#E2E8F0';
+    const faint = styles.getPropertyValue('--faint').trim() || '#94A3B8';
+    const surface = styles.getPropertyValue('--surface').trim() || '#FFFFFF';
+    const positive = styles.getPropertyValue('--progress-positive').trim() || '#16A34A';
+    const warning = styles.getPropertyValue('--progress-warning').trim() || '#D97706';
+    const negative = styles.getPropertyValue('--progress-negative').trim() || '#DC2626';
+    const accentFill = 'rgba(16, 185, 129, 0.08)';
+    const gridColor = colorWithAlpha(border, 0.72);
     const labels = progression.map((week) => `Semana ${week.week}`);
     const data = progression.map((week) => week.estimated1RM);
     const pointColors = progression.map((week) => {
-        if (week.trendPercent === null) return styles.getPropertyValue('--faint').trim() || '#94A3B8';
-        return week.trendPercent > 0
-            ? styles.getPropertyValue('--progress-positive').trim() || '#16A34A'
-            : styles.getPropertyValue('--progress-negative').trim() || '#DC2626';
+        if (week.trendPercent === null) return faint;
+        if (week.trendPercent > 0) return positive;
+        if (week.trendPercent < 0) return negative;
+        return warning;
     });
+    const lastIndex = data.length - 1;
+    const pointRadii = data.map((_, index) => index === lastIndex ? 6 : 4);
+    const pointHoverRadii = data.map((_, index) => index === lastIndex ? 8 : 6);
 
     if (rmChart) {
         rmChart.data.labels = labels;
         rmChart.data.datasets[0].data = data;
         rmChart.data.datasets[0].pointBackgroundColor = pointColors;
+        rmChart.data.datasets[0].pointRadius = pointRadii;
+        rmChart.data.datasets[0].pointHoverRadius = pointHoverRadii;
+        rmChart.data.datasets[0].borderColor = accent;
+        rmChart.data.datasets[0].backgroundColor = accentFill;
         rmChart.update();
         return;
     }
+
+    Chart.defaults.font.family = '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    Chart.defaults.color = muted;
 
     rmChart = new Chart(ctx, {
         type: 'line',
@@ -111,17 +130,75 @@ function renderChart(progression) {
                 borderColor: accent,
                 backgroundColor: accentFill,
                 pointBackgroundColor: pointColors,
-                pointRadius: 5,
-                tension: 0.3,
+                pointBorderColor: surface,
+                pointBorderWidth: 2,
+                pointHoverBackgroundColor: accent,
+                pointHoverBorderColor: surface,
+                pointRadius: pointRadii,
+                pointHoverRadius: pointHoverRadii,
+                borderWidth: 2.5,
+                tension: 0.32,
                 fill: true
             }]
         },
         options: {
             responsive: true,
-            plugins: { legend: { display: false } },
-            scales: { y: { ticks: { callback: (value) => `${value} kg` } } }
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: ink,
+                    borderColor: colorWithAlpha(border, 0.24),
+                    borderWidth: 1,
+                    bodyColor: surface,
+                    displayColors: false,
+                    padding: 12,
+                    titleColor: surface,
+                    titleFont: { family: Chart.defaults.font.family, size: 12, weight: '600' },
+                    bodyFont: { family: Chart.defaults.font.family, size: 13, weight: '500' },
+                    callbacks: {
+                        label: (context) => `${context.parsed.y.toFixed(1)} kg`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    border: { display: false },
+                    grid: { color: gridColor, drawTicks: false },
+                    ticks: {
+                        color: muted,
+                        font: { family: Chart.defaults.font.family, size: 12, weight: '500' },
+                        padding: 10
+                    }
+                },
+                y: {
+                    border: { display: false },
+                    grid: { color: gridColor, drawTicks: false },
+                    ticks: {
+                        color: muted,
+                        font: { family: Chart.defaults.font.family, size: 12, weight: '500' },
+                        padding: 10,
+                        callback: (value) => `${value} kg`
+                    }
+                }
+            }
         }
     });
+}
+
+function colorWithAlpha(hex, alpha) {
+    const normalized = hex.replace('#', '');
+    if (normalized.length !== 6) {
+        return hex;
+    }
+    const r = parseInt(normalized.slice(0, 2), 16);
+    const g = parseInt(normalized.slice(2, 4), 16);
+    const b = parseInt(normalized.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 function renderTrendBadge(progression) {
@@ -131,10 +208,10 @@ function renderTrendBadge(progression) {
         return;
     }
     const last = progression[progression.length - 1];
-    badge.classList.remove('d-none', 'bg-success', 'bg-warning', 'bg-secondary', 'text-dark', 'trend-positive', 'trend-warning', 'trend-negative');
+    badge.classList.remove('d-none', 'bg-success', 'bg-warning', 'bg-secondary', 'text-dark', 'trend-positive', 'trend-warning', 'trend-negative', 'trend-neutral');
     if (last.trendPercent === null) {
-        badge.classList.add('bg-secondary');
-        badge.textContent = 'Primeira semana';
+        badge.classList.add('trend-neutral');
+        badge.innerHTML = `${trendIcon('flat')} Primeira semana`;
     } else if (last.trendPercent > 0) {
         badge.classList.add('trend-positive');
         badge.innerHTML = `${trendIcon('up')} Progredindo +${last.trendPercent.toFixed(1)}%`;
