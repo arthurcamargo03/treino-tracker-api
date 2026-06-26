@@ -8,18 +8,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('log-set-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         hideAlert();
+        clearFormErrors(event.target);
         const payload = {
-            week: Number(document.getElementById('set-week').value),
-            weight: Number(document.getElementById('set-weight').value),
-            reps: Number(document.getElementById('set-reps').value),
-            sets: Number(document.getElementById('set-sets').value)
+            week: parseIntegerField('set-week'),
+            weight: parseDecimalField('set-weight'),
+            reps: parseIntegerField('set-reps'),
+            sets: parseIntegerField('set-sets')
         };
         try {
             await Api.postJson(`/api/exercises/${exerciseId}/sets`, payload);
             event.target.reset();
+            clearFormErrors(event.target);
             loadProgression(exerciseId);
         } catch (err) {
-            showAlert(err.message);
+            handleFormError(event.target, err);
         }
     });
 });

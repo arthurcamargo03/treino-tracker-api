@@ -6,29 +6,33 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('add-exercise-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         hideAlert();
+        clearFormErrors(event.target);
         const name = document.getElementById('exercise-name').value.trim();
         const muscleGroup = document.getElementById('exercise-group').value.trim();
-        const trainingDayId = Number(document.getElementById('exercise-training-day').value);
+        const trainingDayId = parseOptionalIntegerField('exercise-training-day');
         try {
             await Api.postJson('/api/exercises', { name, muscleGroup, trainingDayId });
             event.target.reset();
+            clearFormErrors(event.target);
             loadAll();
         } catch (err) {
-            showAlert(err.message);
+            handleFormError(event.target, err);
         }
     });
 
     document.getElementById('add-training-day-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         hideAlert();
+        clearFormErrors(event.target);
         const name = document.getElementById('training-day-name').value.trim();
         const dayOfWeek = document.getElementById('training-day-of-week').value;
         try {
             await Api.postJson('/api/training-days', { name, dayOfWeek });
             event.target.reset();
+            clearFormErrors(event.target);
             loadAll();
         } catch (err) {
-            showAlert(err.message);
+            handleFormError(event.target, err);
         }
     });
 });

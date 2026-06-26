@@ -45,6 +45,13 @@ const Api = {
     }
 };
 
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('form').forEach((form) => {
+        form.addEventListener('input', (event) => clearFieldError(event.target));
+        form.addEventListener('change', (event) => clearFieldError(event.target));
+    });
+});
+
 function showAlert(message, type = 'danger') {
     const box = document.getElementById('alert-box');
     if (!box) return;
@@ -56,6 +63,69 @@ function hideAlert() {
     const box = document.getElementById('alert-box');
     if (!box) return;
     box.className = 'alert d-none';
+}
+
+function clearFormErrors(form) {
+    if (!form) return;
+    form.querySelectorAll('.is-invalid').forEach((field) => {
+        clearFieldError(field);
+    });
+}
+
+function showFormErrors(form, fieldErrors) {
+    if (!form || !fieldErrors) return;
+    clearFormErrors(form);
+    Object.entries(fieldErrors).forEach(([field, message]) => {
+        const control = form.querySelector(`[data-field="${field}"]`);
+        if (!control) return;
+        const error = document.createElement('div');
+        const errorId = `${control.id || field}-error`;
+        error.id = errorId;
+        error.className = 'invalid-feedback';
+        error.textContent = message;
+        control.classList.add('is-invalid');
+        control.setAttribute('aria-describedby', errorId);
+        const inputGroup = control.closest('.input-group');
+        if (inputGroup) {
+            inputGroup.insertAdjacentElement('afterend', error);
+        } else {
+            control.insertAdjacentElement('afterend', error);
+        }
+    });
+}
+
+function clearFieldError(control) {
+    if (!control?.classList?.contains('is-invalid')) return;
+    const describedBy = control.getAttribute('aria-describedby');
+    control.classList.remove('is-invalid');
+    control.removeAttribute('aria-describedby');
+    if (describedBy) {
+        document.getElementById(describedBy)?.remove();
+    }
+}
+
+function handleFormError(form, err) {
+    showAlert(err.message);
+    showFormErrors(form, err.body?.fieldErrors);
+}
+
+function parseIntegerField(id) {
+    return parseNumberField(id) ?? 0;
+}
+
+function parseOptionalIntegerField(id) {
+    return parseNumberField(id);
+}
+
+function parseDecimalField(id) {
+    return parseNumberField(id) ?? 0;
+}
+
+function parseNumberField(id) {
+    const value = document.getElementById(id).value.trim().replace(',', '.');
+    if (value === '') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
 }
 
 function escapeHtml(str) {

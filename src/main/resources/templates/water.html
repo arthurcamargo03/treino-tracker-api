@@ -33,24 +33,24 @@
 
             <div class="d-flex flex-column gap-2 mt-4">
                 <button id="drink-bottle-btn" class="btn btn-primary btn-lg">Bebi uma garrafa</button>
-                <form id="drink-custom-form" class="input-group">
-                    <input type="number" min="1" class="form-control" id="custom-ml" placeholder="ml customizado">
+                <form id="drink-custom-form" class="input-group" novalidate>
+                    <input type="number" min="1" class="form-control" id="custom-ml" data-field="ml" placeholder="ml customizado">
                     <button class="btn btn-outline-primary" type="submit">Registrar</button>
                 </form>
             </div>
         </div>
 
         <div class="col-lg-7">
-            <form id="settings-form" class="card card-body shadow-sm">
+            <form id="settings-form" class="card card-body shadow-sm" novalidate>
                 <h2 class="h6 text-muted">Ajustar meta e garrafa</h2>
                 <div class="row g-2">
                     <div class="col-6">
                         <label class="form-label">Meta diária (ml)</label>
-                        <input type="number" min="1" class="form-control" id="daily-goal" required>
+                        <input type="number" min="1" class="form-control" id="daily-goal" data-field="dailyGoalMl" required>
                     </div>
                     <div class="col-6">
                         <label class="form-label">Tamanho da garrafa (ml)</label>
-                        <input type="number" min="1" class="form-control" id="bottle-size" required>
+                        <input type="number" min="1" class="form-control" id="bottle-size" data-field="bottleSizeMl" required>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary mt-3">Salvar configurações</button>

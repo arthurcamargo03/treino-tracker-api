@@ -17,20 +17,20 @@
 
     <div class="row g-3 mb-4">
         <div class="col-lg-8">
-            <form id="add-exercise-form" class="card card-body shadow-sm h-100">
+            <form id="add-exercise-form" class="card card-body shadow-sm h-100" novalidate>
                 <h2 class="h6 text-muted">Adicionar exercício</h2>
                 <div class="row g-2">
                     <div class="col-md-4">
                         <label class="form-label">Nome</label>
-                        <input type="text" class="form-control" id="exercise-name" required placeholder="Supino reto">
+                        <input type="text" class="form-control" id="exercise-name" data-field="name" required placeholder="Supino reto">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Grupo muscular</label>
-                        <input type="text" class="form-control" id="exercise-group" required placeholder="Peito">
+                        <input type="text" class="form-control" id="exercise-group" data-field="muscleGroup" required placeholder="Peito">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Treino do dia</label>
-                        <select class="form-select" id="exercise-training-day" required>
+                        <select class="form-select" id="exercise-training-day" data-field="trainingDayId" required>
                             <option value="" disabled selected>Selecione um treino...</option>
                         </select>
                     </div>
@@ -39,12 +39,12 @@
             </form>
         </div>
         <div class="col-lg-4">
-            <form id="add-training-day-form" class="card card-body shadow-sm h-100">
+            <form id="add-training-day-form" class="card card-body shadow-sm h-100" novalidate>
                 <h2 class="h6 text-muted">Novo treino</h2>
                 <label class="form-label">Nome</label>
-                <input type="text" class="form-control mb-2" id="training-day-name" required placeholder="Treino A — Peito">
+                <input type="text" class="form-control mb-2" id="training-day-name" data-field="name" required placeholder="Treino A — Peito">
                 <label class="form-label">Dia da semana</label>
-                <select class="form-select mb-2" id="training-day-of-week" required>
+                <select class="form-select mb-2" id="training-day-of-week" data-field="dayOfWeek" required>
                     <option value="MONDAY">Segunda-feira</option>
                     <option value="TUESDAY">Terça-feira</option>
                     <option value="WEDNESDAY">Quarta-feira</option>

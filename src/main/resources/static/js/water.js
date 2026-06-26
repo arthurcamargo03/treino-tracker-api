@@ -19,29 +19,33 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('drink-custom-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         hideAlert();
-        const ml = Number(document.getElementById('custom-ml').value);
+        clearFormErrors(event.target);
+        const ml = parseIntegerField('custom-ml');
         try {
             const today = await Api.postJson('/api/water/drink', { ml });
             event.target.reset();
+            clearFormErrors(event.target);
             updateRing(today);
         } catch (err) {
-            showAlert(err.message);
+            handleFormError(event.target, err);
         }
     });
 
     document.getElementById('settings-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         hideAlert();
+        clearFormErrors(event.target);
         const payload = {
-            dailyGoalMl: Number(document.getElementById('daily-goal').value),
-            bottleSizeMl: Number(document.getElementById('bottle-size').value)
+            dailyGoalMl: parseIntegerField('daily-goal'),
+            bottleSizeMl: parseIntegerField('bottle-size')
         };
         try {
             await Api.putJson('/api/water/settings', payload);
+            clearFormErrors(event.target);
             showAlert('Configurações salvas.', 'success');
             loadToday();
         } catch (err) {
-            showAlert(err.message);
+            handleFormError(event.target, err);
         }
     });
 });
