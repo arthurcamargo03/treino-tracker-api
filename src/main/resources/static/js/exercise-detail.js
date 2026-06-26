@@ -9,19 +9,23 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         hideAlert();
         clearFormErrors(event.target);
+        const submitButton = event.submitter;
         const payload = {
             week: parseIntegerField('set-week'),
             weight: parseDecimalField('set-weight'),
             reps: parseIntegerField('set-reps'),
             sets: parseIntegerField('set-sets')
         };
+        setButtonLoading(submitButton, true, 'Registrando...');
         try {
             await Api.postJson(`/api/exercises/${exerciseId}/sets`, payload);
             event.target.reset();
             clearFormErrors(event.target);
-            loadProgression(exerciseId);
+            await loadProgression(exerciseId);
         } catch (err) {
             handleFormError(event.target, err);
+        } finally {
+            setButtonLoading(submitButton, false);
         }
     });
 });
@@ -38,12 +42,16 @@ async function loadExercise(exerciseId) {
 }
 
 async function loadProgression(exerciseId) {
+    setProgressionLoading();
     try {
         const progression = await Api.get(`/api/exercises/${exerciseId}/progression`);
         renderTable(progression);
         renderChart(progression);
         renderTrendBadge(progression);
     } catch (err) {
+        document.getElementById('progression-table-body').innerHTML = tableStateRow(6, 'Não foi possível carregar os registros.');
+        setChartState('Não foi possível carregar o gráfico.', 'empty');
+        document.getElementById('trend-badge').classList.add('d-none');
         showAlert(err.message);
     }
 }
@@ -51,7 +59,7 @@ async function loadProgression(exerciseId) {
 function renderTable(progression) {
     const body = document.getElementById('progression-table-body');
     if (progression.length === 0) {
-        body.innerHTML = '<tr><td colspan="6" class="text-muted">Sem dados ainda.</td></tr>';
+        body.innerHTML = tableStateRow(6, 'Sem registros ainda — registre a primeira série acima.');
         return;
     }
     body.innerHTML = progression.map((week) => `
@@ -81,6 +89,21 @@ function formatTrendCell(trendPercent) {
 
 function renderChart(progression) {
     const ctx = document.getElementById('rm-chart');
+    if (progression.length === 0) {
+        if (rmChart) {
+            rmChart.destroy();
+            rmChart = null;
+        }
+        setChartState('Sem registros suficientes para montar o gráfico.', 'empty');
+        return;
+    }
+
+    if (typeof Chart === 'undefined') {
+        setChartState('Não foi possível carregar o gráfico.', 'empty');
+        return;
+    }
+
+    setChartState(null);
     const styles = getComputedStyle(document.documentElement);
     const accent = styles.getPropertyValue('--accent').trim() || '#10B981';
     const ink = styles.getPropertyValue('--ink').trim() || '#0F172A';
@@ -208,7 +231,7 @@ function renderTrendBadge(progression) {
         return;
     }
     const last = progression[progression.length - 1];
-    badge.classList.remove('d-none', 'bg-success', 'bg-warning', 'bg-secondary', 'text-dark', 'trend-positive', 'trend-warning', 'trend-negative', 'trend-neutral');
+    badge.classList.remove('d-none', 'is-loading', 'bg-success', 'bg-warning', 'bg-secondary', 'text-dark', 'trend-positive', 'trend-warning', 'trend-negative', 'trend-neutral');
     if (last.trendPercent === null) {
         badge.classList.add('trend-neutral');
         badge.innerHTML = `${trendIcon('flat')} Primeira semana`;
@@ -231,4 +254,33 @@ function trendIcon(direction) {
         flat: '<path d="M5 12h14"/><path d="m15 8 4 4-4 4"/>'
     };
     return `<svg class="trend-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths[direction]}</svg>`;
+}
+
+function setProgressionLoading() {
+    document.getElementById('progression-table-body').innerHTML = tableStateRow(6, 'Carregando registros...', 'loading');
+    setChartState('Carregando gráfico...', 'loading');
+
+    const badge = document.getElementById('trend-badge');
+    badge.className = 'badge trend-badge is-loading';
+    badge.textContent = 'Atualizando tendência';
+}
+
+function setChartState(message, type = 'empty') {
+    const chartFrame = document.querySelector('.chart-frame');
+    const chartState = document.getElementById('chart-state');
+    const chartCanvas = document.getElementById('rm-chart');
+    if (!chartFrame || !chartState || !chartCanvas) return;
+
+    if (!message) {
+        chartState.className = 'chart-state d-none';
+        chartState.textContent = '';
+        chartFrame.classList.remove('has-state');
+        chartCanvas.classList.remove('d-none');
+        return;
+    }
+
+    chartState.className = `chart-state ${type === 'loading' ? 'loading-state' : 'empty-state'} is-compact`;
+    chartState.textContent = message;
+    chartFrame.classList.add('has-state');
+    chartCanvas.classList.add('d-none');
 }

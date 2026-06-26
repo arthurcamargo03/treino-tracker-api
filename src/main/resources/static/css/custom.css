@@ -191,6 +191,11 @@ small,
     border: 1px solid var(--border);
     border-radius: var(--bs-border-radius);
     box-shadow: var(--shadow-subtle) !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.card:not(form):hover {
+    border-color: rgba(16, 185, 129, 0.32);
 }
 
 .shadow-sm {
@@ -300,7 +305,8 @@ small,
     color: var(--muted) !important;
 }
 
-.empty-state {
+.empty-state,
+.loading-state {
     align-items: center;
     background: var(--surface);
     border: 1px dashed var(--border);
@@ -313,13 +319,43 @@ small,
     text-align: center;
 }
 
+.loading-state {
+    background: rgba(226, 232, 240, 0.2);
+    border-style: solid;
+}
+
+.loading-state::after {
+    animation: loadingPulse 1.2s ease-in-out infinite;
+    background: currentColor;
+    border-radius: 999px;
+    box-shadow: 10px 0 0 currentColor, 20px 0 0 currentColor;
+    content: "";
+    display: inline-block;
+    height: 4px;
+    margin-left: 8px;
+    opacity: 0.45;
+    width: 4px;
+}
+
+.empty-state.is-compact,
+.loading-state.is-compact {
+    min-height: 72px;
+    padding: 16px;
+}
+
 .btn {
     border-radius: 10px;
+    border-width: 1px;
     font-size: 15px;
     font-weight: 600;
     letter-spacing: 0;
     box-shadow: none !important;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.btn.is-loading {
+    opacity: 0.82;
+    pointer-events: none;
 }
 
 .btn-primary {
@@ -445,6 +481,16 @@ small,
     --bs-table-bg-state: rgba(16, 185, 129, 0.04);
 }
 
+.table-state {
+    background: var(--surface) !important;
+    padding: 10px 0 !important;
+}
+
+.table-state .empty-state,
+.table-state .loading-state {
+    margin: 0;
+}
+
 .trend-cell {
     align-items: center;
     border-radius: 999px;
@@ -474,8 +520,22 @@ small,
     position: relative;
 }
 
+.chart-frame.has-state {
+    display: flex;
+}
+
 .chart-frame canvas {
     display: block;
+}
+
+.chart-state {
+    inset: 0;
+    position: absolute;
+}
+
+.chart-state.empty-state,
+.chart-state.loading-state {
+    min-height: 100%;
 }
 
 .badge {
@@ -545,7 +605,12 @@ small,
 .water-ring-wrapper {
     height: 220px;
     position: relative;
+    transition: opacity 0.15s ease;
     width: 220px;
+}
+
+.water-ring-wrapper.is-loading {
+    opacity: 0.72;
 }
 
 .water-ring {
@@ -606,6 +671,17 @@ small,
     to {
         opacity: 1;
         stroke-width: 8.5;
+    }
+}
+
+@keyframes loadingPulse {
+    0%,
+    100% {
+        opacity: 0.25;
+    }
+
+    50% {
+        opacity: 0.65;
     }
 }
 

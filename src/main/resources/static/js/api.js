@@ -109,6 +109,37 @@ function handleFormError(form, err) {
     showFormErrors(form, err.body?.fieldErrors);
 }
 
+function loadingState(message = 'Carregando...') {
+    return `<div class="loading-state">${escapeHtml(message)}</div>`;
+}
+
+function emptyState(message) {
+    return `<div class="empty-state">${escapeHtml(message)}</div>`;
+}
+
+function tableStateRow(colspan, message, type = 'empty') {
+    const stateClass = type === 'loading' ? 'loading-state' : 'empty-state';
+    return `<tr><td colspan="${colspan}" class="table-state"><div class="${stateClass} is-compact">${escapeHtml(message)}</div></td></tr>`;
+}
+
+function setButtonLoading(button, isLoading, loadingText = 'Carregando...') {
+    if (!button) return;
+    if (isLoading) {
+        button.dataset.originalText = button.dataset.originalText || button.textContent;
+        button.textContent = loadingText;
+        button.disabled = true;
+        button.classList.add('is-loading');
+        button.setAttribute('aria-busy', 'true');
+        return;
+    }
+
+    button.textContent = button.dataset.originalText || button.textContent;
+    delete button.dataset.originalText;
+    button.disabled = false;
+    button.classList.remove('is-loading');
+    button.removeAttribute('aria-busy');
+}
+
 function parseIntegerField(id) {
     return parseNumberField(id) ?? 0;
 }

@@ -7,16 +7,20 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         hideAlert();
         clearFormErrors(event.target);
+        const submitButton = event.submitter;
         const name = document.getElementById('exercise-name').value.trim();
         const muscleGroup = document.getElementById('exercise-group').value.trim();
         const trainingDayId = parseOptionalIntegerField('exercise-training-day');
+        setButtonLoading(submitButton, true, 'Adicionando...');
         try {
             await Api.postJson('/api/exercises', { name, muscleGroup, trainingDayId });
             event.target.reset();
             clearFormErrors(event.target);
-            loadAll();
+            await loadAll();
         } catch (err) {
             handleFormError(event.target, err);
+        } finally {
+            setButtonLoading(submitButton, false);
         }
     });
 
@@ -24,21 +28,27 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         hideAlert();
         clearFormErrors(event.target);
+        const submitButton = event.submitter;
         const name = document.getElementById('training-day-name').value.trim();
         const dayOfWeek = document.getElementById('training-day-of-week').value;
+        setButtonLoading(submitButton, true, 'Criando...');
         try {
             await Api.postJson('/api/training-days', { name, dayOfWeek });
             event.target.reset();
             clearFormErrors(event.target);
-            loadAll();
+            await loadAll();
         } catch (err) {
             handleFormError(event.target, err);
+        } finally {
+            setButtonLoading(submitButton, false);
         }
     });
 });
 
 async function loadAll() {
     const groupsContainer = document.getElementById('exercise-groups');
+    document.getElementById('day-nav').innerHTML = '';
+    groupsContainer.innerHTML = loadingState('Carregando exercícios...');
     try {
         const [trainingDays, exercises] = await Promise.all([
             Api.get('/api/training-days'),
@@ -100,11 +110,11 @@ function navButton(label, filterValue, isActive) {
 function renderExerciseGroups(trainingDays, exercises) {
     const container = document.getElementById('exercise-groups');
     if (trainingDays.length === 0) {
-        container.innerHTML = '<p class="text-muted">Cadastre um treino para começar a organizar seus exercícios.</p>';
+        container.innerHTML = emptyState('Cadastre um treino para começar a organizar seus exercícios.');
         return;
     }
     if (exercises.length === 0) {
-        container.innerHTML = '<div class="empty-state">Nenhum exercício ainda — adicione o primeiro acima.</div>';
+        container.innerHTML = emptyState('Nenhum exercício ainda — adicione o primeiro acima.');
         return;
     }
 
@@ -135,7 +145,7 @@ function renderExerciseGroups(trainingDays, exercises) {
 function groupHtml(day, exercises) {
     const cards = exercises.length > 0
         ? exercises.map(cardHtml).join('')
-        : '<p class="text-muted">Nenhum exercício cadastrado neste treino ainda.</p>';
+        : '<div class="empty-state is-compact">Nenhum exercício cadastrado neste treino ainda.</div>';
     return `
         <section data-day-id="${day.id}" class="mb-4">
             <h2 class="h5 mt-4 mb-3 pb-2 border-bottom">
@@ -153,7 +163,7 @@ function cardHtml(exercise) {
                 <h3 class="h5 mb-1">${escapeHtml(exercise.name)}</h3>
                 <div class="exercise-card-meta">
                     <span class="badge muscle-badge">${escapeHtml(exercise.muscleGroup)}</span>
-                    <span class="trend-badge is-loading d-none" id="trend-badge-${exercise.id}">...</span>
+                    <span class="trend-badge is-loading" id="trend-badge-${exercise.id}">Atualizando</span>
                 </div>
             </div>
         </article>`;

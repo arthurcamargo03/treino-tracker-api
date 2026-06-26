@@ -6,13 +6,16 @@ document.addEventListener('DOMContentLoaded', () => {
     loadToday();
     loadSettings();
 
-    document.getElementById('drink-bottle-btn').addEventListener('click', async () => {
+    document.getElementById('drink-bottle-btn').addEventListener('click', async (event) => {
         hideAlert();
+        setButtonLoading(event.currentTarget, true, 'Registrando...');
         try {
             const today = await Api.postJson('/api/water/drink');
             updateRing(today);
         } catch (err) {
             showAlert(err.message);
+        } finally {
+            setButtonLoading(event.currentTarget, false);
         }
     });
 
@@ -20,7 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         hideAlert();
         clearFormErrors(event.target);
+        const submitButton = event.submitter;
         const ml = parseIntegerField('custom-ml');
+        setButtonLoading(submitButton, true, 'Registrando...');
         try {
             const today = await Api.postJson('/api/water/drink', { ml });
             event.target.reset();
@@ -28,6 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
             updateRing(today);
         } catch (err) {
             handleFormError(event.target, err);
+        } finally {
+            setButtonLoading(submitButton, false);
         }
     });
 
@@ -35,27 +42,34 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         hideAlert();
         clearFormErrors(event.target);
+        const submitButton = event.submitter;
         const payload = {
             dailyGoalMl: parseIntegerField('daily-goal'),
             bottleSizeMl: parseIntegerField('bottle-size')
         };
+        setButtonLoading(submitButton, true, 'Salvando...');
         try {
             await Api.putJson('/api/water/settings', payload);
             clearFormErrors(event.target);
             showAlert('Configurações salvas.', 'success');
-            loadToday();
+            await loadToday();
         } catch (err) {
             handleFormError(event.target, err);
+        } finally {
+            setButtonLoading(submitButton, false);
         }
     });
 });
 
 async function loadToday() {
+    setWaterLoading(true);
     try {
         const today = await Api.get('/api/water/today');
         updateRing(today);
     } catch (err) {
         showAlert(err.message);
+    } finally {
+        setWaterLoading(false);
     }
 }
 
@@ -78,6 +92,19 @@ function updateRing(today) {
     document.getElementById('bottle-summary').textContent = bottleSummary(today);
 
     document.getElementById('goal-badge').classList.toggle('d-none', !today.goalReached);
+}
+
+function setWaterLoading(isLoading) {
+    const wrapper = document.querySelector('.water-ring-wrapper');
+    wrapper?.classList.toggle('is-loading', isLoading);
+    wrapper?.setAttribute('aria-busy', String(isLoading));
+
+    if (!isLoading) return;
+    renderBottleSegments(1, 0);
+    document.getElementById('ring-percent').textContent = '...';
+    document.getElementById('ring-amounts').textContent = 'Carregando';
+    document.getElementById('bottle-summary').textContent = 'Carregando hidratação...';
+    document.getElementById('goal-badge').classList.add('d-none');
 }
 
 function renderBottleSegments(totalSegments, completedSegments) {
