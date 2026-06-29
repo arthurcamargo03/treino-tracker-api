@@ -662,6 +662,21 @@ small,
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
 }
 
+#settings-form .input-group-text {
+    background-color: var(--bg, #F8FAFC);
+    border-color: var(--border);
+    color: var(--muted);
+    font-size: 14px;
+}
+
+#settings-form .input-group:focus-within .input-group-text {
+    border-color: var(--accent);
+}
+
+#goal-today-hint {
+    margin-top: 6px;
+}
+
 @keyframes waterSegmentFill {
     from {
         opacity: 0.28;

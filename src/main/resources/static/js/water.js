@@ -2,6 +2,8 @@ const RING_RADIUS = 52;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
+let lastToday = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     loadToday();
     loadSettings();
@@ -78,6 +80,7 @@ async function loadSettings() {
         const settings = await Api.get('/api/water/settings');
         document.getElementById('daily-goal').value = settings.dailyGoalMl;
         document.getElementById('bottle-size').value = settings.bottleSizeMl;
+        updateGoalHint(lastToday);
     } catch (err) {
         showAlert(err.message);
     }
@@ -92,6 +95,21 @@ function updateRing(today) {
     document.getElementById('bottle-summary').textContent = bottleSummary(today);
 
     document.getElementById('goal-badge').classList.toggle('d-none', !today.goalReached);
+    updateGoalHint(today);
+}
+
+function updateGoalHint(today) {
+    lastToday = today;
+    const hint = document.getElementById('goal-today-hint');
+    if (!hint || !today) return;
+    const configured = parseInt(document.getElementById('daily-goal').value, 10);
+    if (Number.isNaN(configured) || configured === today.goalMl) {
+        hint.classList.add('d-none');
+        hint.textContent = '';
+        return;
+    }
+    hint.classList.remove('d-none');
+    hint.textContent = `Hoje vale ${today.goalMl} ml — a nova meta passa a valer amanhã.`;
 }
 
 function setWaterLoading(isLoading) {

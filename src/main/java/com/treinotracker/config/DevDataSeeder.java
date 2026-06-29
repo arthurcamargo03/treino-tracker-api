@@ -32,21 +32,23 @@ public class DevDataSeeder implements CommandLineRunner {
         TrainingDay treinoB = workoutService.addTrainingDay("Treino B — Posterior de coxa", DayOfWeek.WEDNESDAY);
         TrainingDay treinoC = workoutService.addTrainingDay("Treino C — Braços", DayOfWeek.FRIDAY);
 
-        Exercise progressing = workoutService.addExercise("Supino reto", "Peito", treinoA.getId());
-        workoutService.logSet(progressing.getId(), 1, 60.0, 10, 3);
-        workoutService.logSet(progressing.getId(), 2, 63.0, 10, 3);
-        workoutService.logSet(progressing.getId(), 3, 66.0, 10, 3);
-        workoutService.logSet(progressing.getId(), 4, 70.0, 10, 3);
+        Exercise supino = workoutService.addExercise("Supino reto", "Peito", treinoA.getId());
+        workoutService.logSet(supino.getId(), 1, 60.0, 10, 3);
+        workoutService.logSet(supino.getId(), 2, 62.5, 10, 3);
+        workoutService.logSet(supino.getId(), 3, 65.0, 10, 3);
+        workoutService.logSet(supino.getId(), 4, 67.5, 10, 3);
+        workoutService.logSet(supino.getId(), 5, 70.0, 10, 3);
+        workoutService.logSet(supino.getId(), 6, 72.5, 10, 3);
 
-        Exercise strong = workoutService.addExercise("Levantamento terra", "Posterior de coxa", treinoB.getId());
-        workoutService.logSet(strong.getId(), 1, 140.0, 5, 3);
-        workoutService.logSet(strong.getId(), 2, 142.0, 5, 3);
-        workoutService.logSet(strong.getId(), 3, 141.0, 5, 3);
+        Exercise terra = workoutService.addExercise("Levantamento terra", "Posterior de coxa", treinoB.getId());
+        workoutService.logSet(terra.getId(), 1, 140.0, 5, 3);
+        workoutService.logSet(terra.getId(), 2, 145.0, 5, 3);
+        workoutService.logSet(terra.getId(), 3, 150.0, 5, 3);
+        workoutService.logSet(terra.getId(), 4, 155.0, 5, 3);
 
-        Exercise stagnant = workoutService.addExercise("Rosca direta", "Bíceps", treinoC.getId());
-        workoutService.logSet(stagnant.getId(), 1, 20.0, 12, 3);
-        workoutService.logSet(stagnant.getId(), 2, 20.0, 12, 3);
-        workoutService.logSet(stagnant.getId(), 3, 20.0, 12, 3);
-        workoutService.logSet(stagnant.getId(), 4, 20.0, 12, 3);
+        Exercise rosca = workoutService.addExercise("Rosca direta", "Bíceps", treinoC.getId());
+        workoutService.logSet(rosca.getId(), 1, 18.0, 12, 3);
+        workoutService.logSet(rosca.getId(), 2, 20.0, 12, 3);
+        workoutService.logSet(rosca.getId(), 3, 22.0, 12, 3);
     }
 }
