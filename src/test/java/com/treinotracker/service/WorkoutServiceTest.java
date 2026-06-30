@@ -1,12 +1,17 @@
 package com.treinotracker.service;
 
+import com.treinotracker.dto.ProgressaoPosicao;
 import com.treinotracker.dto.WeekSummary;
 import com.treinotracker.entity.Exercise;
+import com.treinotracker.entity.Serie;
+import com.treinotracker.entity.SessaoExercicio;
 import com.treinotracker.entity.SetLog;
 import com.treinotracker.entity.TrainingDay;
 import com.treinotracker.exception.DuplicateResourceException;
 import com.treinotracker.exception.ResourceNotFoundException;
 import com.treinotracker.repository.ExerciseRepository;
+import com.treinotracker.repository.SerieRepository;
+import com.treinotracker.repository.SessaoExercicioRepository;
 import com.treinotracker.repository.SetLogRepository;
 import com.treinotracker.repository.TrainingDayRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,11 +46,18 @@ class WorkoutServiceTest {
     @Mock
     private TrainingDayRepository trainingDayRepository;
 
+    @Mock
+    private SessaoExercicioRepository sessaoExercicioRepository;
+
+    @Mock
+    private SerieRepository serieRepository;
+
     private WorkoutService workoutService;
 
     @BeforeEach
     void setUp() {
-        workoutService = new WorkoutService(exerciseRepository, setLogRepository, trainingDayRepository);
+        workoutService = new WorkoutService(exerciseRepository, setLogRepository, trainingDayRepository,
+                sessaoExercicioRepository, serieRepository);
     }
 
     private static Exercise exerciseWithId(Long id, String name, String muscleGroup) {
@@ -221,5 +234,139 @@ class WorkoutServiceTest {
         when(setLogRepository.findByExerciseIdOrderByWeekAsc(1L)).thenReturn(List.of());
 
         assertThat(workoutService.isProgressing(1L)).isFalse();
+    }
+
+    @Test
+    void registrarSessao_savesSessionAndAllSeries() {
+        Exercise exercise = exerciseWithId(1L, "Supino reto", "Peito");
+        when(exerciseRepository.findById(1L)).thenReturn(Optional.of(exercise));
+        when(sessaoExercicioRepository.save(any(SessaoExercicio.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(serieRepository.save(any(Serie.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Serie s1 = new Serie(null, 1, 60.0, 10);
+        Serie s2 = new Serie(null, 2, 60.0, 9);
+        Serie s3 = new Serie(null, 3, 60.0, 8);
+
+        SessaoExercicio sessao = workoutService.registrarSessao(1L, 4, List.of(s1, s2, s3));
+
+        assertThat(sessao.getExercise()).isEqualTo(exercise);
+        assertThat(sessao.getSemana()).isEqualTo(4);
+        assertThat(s1.getSessaoExercicio()).isEqualTo(sessao);
+        assertThat(s3.getSessaoExercicio()).isEqualTo(sessao);
+        verify(sessaoExercicioRepository).save(any(SessaoExercicio.class));
+        verify(serieRepository, times(3)).save(any(Serie.class));
+    }
+
+    @Test
+    void registrarSessao_throwsResourceNotFoundException_whenExerciseMissing() {
+        when(exerciseRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> workoutService.registrarSessao(99L, 1, List.of(new Serie(null, 1, 60.0, 10))))
+                .isInstanceOf(ResourceNotFoundException.class);
+
+        verify(serieRepository, never()).save(any());
+    }
+
+    @Test
+    void registrarSessao_throwsIllegalArgument_whenNoSeries() {
+        assertThatThrownBy(() -> workoutService.registrarSessao(1L, 1, List.of()))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(sessaoExercicioRepository, never()).save(any());
+        verify(serieRepository, never()).save(any());
+    }
+
+    @Test
+    void getProgressaoPorPosicao_buildsEvolutionPerPosition_withTrend() {
+        Exercise exercise = exerciseWithId(1L, "Supino reto", "Peito");
+        when(exerciseRepository.findById(1L)).thenReturn(Optional.of(exercise));
+        when(serieRepository.findAllByExerciseId(1L)).thenReturn(List.of(
+                serie(exercise, 1, 1, 100.0, 10),
+                serie(exercise, 1, 2, 80.0, 10),
+                serie(exercise, 2, 1, 110.0, 10),
+                serie(exercise, 2, 2, 88.0, 10)
+        ));
+
+        List<ProgressaoPosicao> progressao = workoutService.getProgressaoPorPosicao(1L);
+
+        assertThat(progressao).extracting(ProgressaoPosicao::posicao).containsExactly(1, 2);
+
+        ProgressaoPosicao pos1 = posicao(progressao, 1);
+        assertThat(pos1.pontos()).hasSize(2);
+        assertThat(pos1.pontos().get(0).trendPercent()).isNull();
+        // (110 - 100) / 100 * 100 = 10% (o fator de reps se cancela)
+        assertThat(pos1.pontos().get(1).trendPercent()).isCloseTo(10.0, within(0.0001));
+
+        ProgressaoPosicao pos2 = posicao(progressao, 2);
+        assertThat(pos2.pontos().get(1).trendPercent()).isCloseTo(10.0, within(0.0001));
+    }
+
+    @Test
+    void getProgressaoPorPosicao_marksPrimeiraVez_whenPositionAbsentInPreviousWeek() {
+        Exercise exercise = exerciseWithId(1L, "Supino reto", "Peito");
+        when(exerciseRepository.findById(1L)).thenReturn(Optional.of(exercise));
+        // Semana 2 tem menos séries (sem posição 3); semana 3 traz a posição 3 de volta.
+        when(serieRepository.findAllByExerciseId(1L)).thenReturn(List.of(
+                serie(exercise, 1, 1, 100.0, 10),
+                serie(exercise, 1, 2, 80.0, 10),
+                serie(exercise, 1, 3, 60.0, 10),
+                serie(exercise, 2, 1, 110.0, 10),
+                serie(exercise, 2, 2, 85.0, 10),
+                serie(exercise, 3, 1, 115.0, 10),
+                serie(exercise, 3, 2, 88.0, 10),
+                serie(exercise, 3, 3, 70.0, 10)
+        ));
+
+        List<ProgressaoPosicao> progressao = workoutService.getProgressaoPorPosicao(1L);
+
+        ProgressaoPosicao pos1 = posicao(progressao, 1);
+        assertThat(pos1.pontos()).hasSize(3);
+        assertThat(pos1.pontos().get(2).semana()).isEqualTo(3);
+        // semana 3 vs semana 2: (115 - 110) / 110 * 100
+        assertThat(pos1.pontos().get(2).trendPercent()).isCloseTo((5.0 / 110.0) * 100.0, within(0.0001));
+
+        ProgressaoPosicao pos3 = posicao(progressao, 3);
+        assertThat(pos3.pontos()).hasSize(2);
+        // Posição 3 não existe na semana anterior (2) → "primeira vez", sem tendência. Nunca divide por zero.
+        assertThat(pos3.pontos()).allSatisfy(ponto -> assertThat(ponto.trendPercent()).isNull());
+    }
+
+    @Test
+    void getProgressaoPorPosicao_keepsBestSeriePerPositionWeek() {
+        Exercise exercise = exerciseWithId(1L, "Supino reto", "Peito");
+        when(exerciseRepository.findById(1L)).thenReturn(Optional.of(exercise));
+        // Mesma posição e semana, duas séries: fica a de maior 1RM (120x8 > 100x10).
+        when(serieRepository.findAllByExerciseId(1L)).thenReturn(List.of(
+                serie(exercise, 1, 1, 100.0, 10),
+                serie(exercise, 1, 1, 120.0, 8)
+        ));
+
+        List<ProgressaoPosicao> progressao = workoutService.getProgressaoPorPosicao(1L);
+
+        ProgressaoPosicao pos1 = posicao(progressao, 1);
+        assertThat(pos1.pontos()).hasSize(1);
+        assertThat(pos1.pontos().get(0).carga()).isEqualTo(120.0);
+        assertThat(pos1.pontos().get(0).reps()).isEqualTo(8);
+    }
+
+    @Test
+    void getProgressaoPorPosicao_throwsResourceNotFoundException_whenExerciseMissing() {
+        when(exerciseRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> workoutService.getProgressaoPorPosicao(1L))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    private static Serie serie(Exercise exercise, int semana, int posicao, double carga, int reps) {
+        SessaoExercicio sessao = new SessaoExercicio(exercise, semana, LocalDate.now());
+        return new Serie(sessao, posicao, carga, reps);
+    }
+
+    private static ProgressaoPosicao posicao(List<ProgressaoPosicao> progressao, int posicao) {
+        return progressao.stream()
+                .filter(item -> item.posicao() == posicao)
+                .findFirst()
+                .orElseThrow();
     }
 }

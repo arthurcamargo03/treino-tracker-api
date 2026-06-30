@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -41,6 +42,10 @@ public class Exercise {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "training_day_id", nullable = false)
     private TrainingDay trainingDay;
+
+    @Positive
+    @Column(name = "series_validas", nullable = false)
+    private int seriesValidas = 3;
 
     public Exercise(String name, String muscleGroup) {
         this.name = name;
