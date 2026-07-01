@@ -17,6 +17,11 @@ replay_pid*
 *.mv.db
 *.trace.db
 
+### Variaveis de ambiente locais (nunca commitar credenciais) ###
+.env
+.env.*
+!.env.example
+
 ### Logs ###
 *.log
 
