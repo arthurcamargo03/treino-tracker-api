@@ -1,0 +1,38 @@
+# Sobe a aplicacao (profile prod) conectada a um Postgres real, localmente.
+# Uso: docker compose up --build
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-treinotracker}
+      POSTGRES_USER: ${POSTGRES_USER:-treino}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-treino}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # so fica "healthy" quando o Postgres aceita conexoes
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-treino} -d ${POSTGRES_DB:-treinotracker}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # O application-prod.properties monta a URL a partir destas variaveis
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: ${POSTGRES_DB:-treinotracker}
+      PGUSER: ${POSTGRES_USER:-treino}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-treino}
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
