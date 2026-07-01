@@ -147,7 +147,8 @@ function renderTable(data) {
         });
     });
 
-    const semanasOrdenadas = [...semanas.keys()].sort((a, b) => a - b);
+    // Semana mais recente no topo — é a que interessa comparar ao abrir.
+    const semanasOrdenadas = [...semanas.keys()].sort((a, b) => b - a);
     let html = '';
     semanasOrdenadas.forEach((semana) => {
         const series = semanas.get(semana).sort((a, b) => a.posicao - b.posicao);
