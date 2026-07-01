@@ -62,12 +62,22 @@
         <div class="col-lg-7">
             <div class="card card-body shadow-sm h-100 chart-card">
                 <div class="chart-heading">
-                    <h2 class="h6 text-muted mb-0">1RM estimado por semana (fórmula de Epley)</h2>
+                    <h2 class="h6 text-muted mb-0" id="chart-title">1RM estimado por semana (fórmula de Epley)</h2>
                     <span id="trend-badge" class="badge trend-badge d-none"></span>
                 </div>
-                <div class="series-selector d-none" id="series-selector">
-                    <label class="form-label mb-0" for="posicao-select">Série</label>
-                    <select class="form-select form-select-sm" id="posicao-select"></select>
+                <div class="chart-controls d-none" id="chart-controls">
+                    <div class="control-group">
+                        <label class="form-label mb-0" for="metric-select">Métrica</label>
+                        <select class="form-select form-select-sm" id="metric-select">
+                            <option value="rm" selected>1RM estimado (kg)</option>
+                            <option value="reps">Repetições</option>
+                            <option value="carga">Carga (kg)</option>
+                        </select>
+                    </div>
+                    <div class="control-group d-none" id="posicao-group">
+                        <label class="form-label mb-0" for="posicao-select">Série</label>
+                        <select class="form-select form-select-sm" id="posicao-select"></select>
+                    </div>
                 </div>
                 <div class="chart-frame">
                     <div id="chart-state" class="chart-state loading-state is-compact">Carregando gráfico...</div>
@@ -81,6 +91,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="/js/api.js"></script>
-<script src="/js/exercise-detail.js?v=series-chart-2"></script>
+<script src="/js/exercise-detail.js?v=series-metric-1"></script>
 </body>
 </html>

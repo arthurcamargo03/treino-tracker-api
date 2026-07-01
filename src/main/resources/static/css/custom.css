@@ -274,21 +274,27 @@ small,
     width: 100%;
 }
 
-.series-selector {
-    align-items: center;
+.chart-controls {
     display: flex;
-    gap: 8px;
+    flex-wrap: wrap;
+    gap: 16px;
     margin-bottom: 12px;
 }
 
-.series-selector .form-label {
+.chart-controls .control-group {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+}
+
+.chart-controls .form-label {
     color: var(--muted);
     font-size: 13px;
     font-weight: 600;
 }
 
-.series-selector .form-select {
-    max-width: 160px;
+.chart-controls .form-select {
+    max-width: 200px;
 }
 
 .progression-table tr.week-start:not(:first-child) td {

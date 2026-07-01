@@ -1,6 +1,13 @@
 let rmChart;
 let progressaoData = [];
 let selectedPosicao = null;
+let selectedMetric = 'rm';
+
+const METRICS = {
+    rm: { label: '1RM estimado', unit: 'kg', title: '1RM estimado por semana (fórmula de Epley)', value: (p) => p.estimated1RM, decimals: 1 },
+    reps: { label: 'Repetições', unit: '', title: 'Repetições por semana', value: (p) => p.reps, decimals: 0 },
+    carga: { label: 'Carga', unit: 'kg', title: 'Carga por semana', value: (p) => p.carga, decimals: 1 }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     const exerciseId = document.body.dataset.exerciseId;
@@ -9,9 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('posicao-select').addEventListener('change', (event) => {
         selectedPosicao = parseInt(event.target.value, 10);
-        const pontos = pontosForPosicao(selectedPosicao);
-        renderChart(pontos);
-        renderTrendBadge(pontos);
+        redrawChart();
+    });
+
+    document.getElementById('metric-select').addEventListener('change', (event) => {
+        selectedMetric = event.target.value;
+        redrawChart();
     });
 
     document.getElementById('log-session-form').addEventListener('submit', async (event) => {
@@ -116,17 +126,23 @@ async function loadProgression(exerciseId) {
         progressaoData = await Api.get(`/api/exercises/${exerciseId}/progressao-series`);
         renderPosicaoSelector(progressaoData);
         renderTable(progressaoData);
-        const pontos = pontosForPosicao(selectedPosicao);
-        renderChart(pontos);
-        renderTrendBadge(pontos);
+        redrawChart();
     } catch (err) {
         progressaoData = [];
         document.getElementById('progression-table-body').innerHTML = tableStateRow(6, 'Não foi possível carregar os registros.');
-        document.getElementById('series-selector').classList.add('d-none');
+        document.getElementById('chart-controls').classList.add('d-none');
         setChartState('Não foi possível carregar o gráfico.', 'empty');
         document.getElementById('trend-badge').classList.add('d-none');
         showAlert(err.message);
     }
+}
+
+function redrawChart() {
+    const pontos = pontosForPosicao(selectedPosicao);
+    const metric = METRICS[selectedMetric];
+    document.getElementById('chart-title').textContent = metric.title;
+    renderChart(pontos, metric);
+    renderTrendBadge(pontos, metric);
 }
 
 // Transforma a lista por posição em linhas por semana → série 1, série 2...
@@ -168,14 +184,16 @@ function renderTable(data) {
 }
 
 function renderPosicaoSelector(data) {
-    const selector = document.getElementById('series-selector');
+    const controls = document.getElementById('chart-controls');
+    const posicaoGroup = document.getElementById('posicao-group');
     const select = document.getElementById('posicao-select');
     if (data.length === 0) {
-        selector.classList.add('d-none');
+        controls.classList.add('d-none');
         selectedPosicao = null;
         return;
     }
 
+    controls.classList.remove('d-none');
     const posicoes = data.map((item) => item.posicao).sort((a, b) => a - b);
     if (selectedPosicao === null || !posicoes.includes(selectedPosicao)) {
         selectedPosicao = posicoes[0];
@@ -183,7 +201,8 @@ function renderPosicaoSelector(data) {
     select.innerHTML = posicoes.map((posicao) =>
         `<option value="${posicao}"${posicao === selectedPosicao ? ' selected' : ''}>${posicao}ª série</option>`
     ).join('');
-    selector.classList.toggle('d-none', posicoes.length <= 1);
+    // Só faz sentido escolher a posição quando há mais de uma série.
+    posicaoGroup.classList.toggle('d-none', posicoes.length <= 1);
 }
 
 function pontosForPosicao(posicao) {
@@ -208,17 +227,34 @@ function formatTrendCell(trendPercent) {
     return `<span class="trend-cell trend-warning">${trendIcon('flat')} ${trendPercent.toFixed(1)}%</span>`;
 }
 
-function renderChart(progression) {
+// Tendência da métrica escolhida entre a semana atual e a anterior da mesma
+// posição. Usa o flag do servidor (trendPercent === null) para saber quando a
+// posição não existia na semana anterior (primeira vez / semana pulada).
+function metricTrend(pontos, index, metric) {
+    const ponto = pontos[index];
+    if (index === 0 || ponto.trendPercent === null) return null;
+    const anterior = metric.value(pontos[index - 1]);
+    const atual = metric.value(ponto);
+    if (anterior === 0) return null;
+    return ((atual - anterior) / anterior) * 100;
+}
+
+function formatMetricValue(metric, value) {
+    const rounded = value.toFixed(metric.decimals);
+    const pretty = metric.decimals > 0 ? rounded.replace('.', ',') : rounded;
+    return metric.unit ? `${pretty} ${metric.unit}` : pretty;
+}
+
+function renderChart(progression, metric) {
     const ctx = document.getElementById('rm-chart');
+    if (rmChart) {
+        rmChart.destroy();
+        rmChart = null;
+    }
     if (progression.length === 0) {
-        if (rmChart) {
-            rmChart.destroy();
-            rmChart = null;
-        }
         setChartState('Sem registros suficientes para montar o gráfico.', 'empty');
         return;
     }
-
     if (typeof Chart === 'undefined') {
         setChartState('Não foi possível carregar o gráfico.', 'empty');
         return;
@@ -238,28 +274,17 @@ function renderChart(progression) {
     const accentFill = 'rgba(16, 185, 129, 0.08)';
     const gridColor = colorWithAlpha(border, 0.72);
     const labels = progression.map((ponto) => `Semana ${ponto.semana}`);
-    const data = progression.map((ponto) => ponto.estimated1RM);
-    const pointColors = progression.map((ponto) => {
-        if (ponto.trendPercent === null) return faint;
-        if (ponto.trendPercent > 0) return positive;
-        if (ponto.trendPercent < 0) return negative;
+    const data = progression.map((ponto) => metric.value(ponto));
+    const pointColors = progression.map((_, index) => {
+        const trend = metricTrend(progression, index, metric);
+        if (trend === null) return faint;
+        if (trend > 0) return positive;
+        if (trend < 0) return negative;
         return warning;
     });
     const lastIndex = data.length - 1;
     const pointRadii = data.map((_, index) => index === lastIndex ? 6 : 4);
     const pointHoverRadii = data.map((_, index) => index === lastIndex ? 8 : 6);
-
-    if (rmChart) {
-        rmChart.data.labels = labels;
-        rmChart.data.datasets[0].data = data;
-        rmChart.data.datasets[0].pointBackgroundColor = pointColors;
-        rmChart.data.datasets[0].pointRadius = pointRadii;
-        rmChart.data.datasets[0].pointHoverRadius = pointHoverRadii;
-        rmChart.data.datasets[0].borderColor = accent;
-        rmChart.data.datasets[0].backgroundColor = accentFill;
-        rmChart.update();
-        return;
-    }
 
     Chart.defaults.font.family = '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
     Chart.defaults.color = muted;
@@ -269,7 +294,7 @@ function renderChart(progression) {
         data: {
             labels,
             datasets: [{
-                label: '1RM estimado (kg)',
+                label: metric.unit ? `${metric.label} (${metric.unit})` : metric.label,
                 data,
                 borderColor: accent,
                 backgroundColor: accentFill,
@@ -305,7 +330,7 @@ function renderChart(progression) {
                     titleFont: { family: Chart.defaults.font.family, size: 12, weight: '600' },
                     bodyFont: { family: Chart.defaults.font.family, size: 13, weight: '500' },
                     callbacks: {
-                        label: (context) => `${context.parsed.y.toFixed(1)} kg`
+                        label: (context) => formatMetricValue(metric, context.parsed.y)
                     }
                 }
             },
@@ -326,7 +351,7 @@ function renderChart(progression) {
                         color: muted,
                         font: { family: Chart.defaults.font.family, size: 12, weight: '500' },
                         padding: 10,
-                        callback: (value) => `${value} kg`
+                        callback: (value) => metric.unit ? `${value} ${metric.unit}` : `${value}`
                     }
                 }
             }
@@ -345,26 +370,26 @@ function colorWithAlpha(hex, alpha) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function renderTrendBadge(progression) {
+function renderTrendBadge(progression, metric) {
     const badge = document.getElementById('trend-badge');
     if (progression.length === 0) {
         badge.classList.add('d-none');
         return;
     }
-    const last = progression[progression.length - 1];
+    const trend = metricTrend(progression, progression.length - 1, metric);
     badge.classList.remove('d-none', 'is-loading', 'bg-success', 'bg-warning', 'bg-secondary', 'text-dark', 'trend-positive', 'trend-warning', 'trend-negative', 'trend-neutral');
-    if (last.trendPercent === null) {
+    if (trend === null) {
         badge.classList.add('trend-neutral');
         badge.innerHTML = `${trendIcon('flat')} Primeira semana`;
-    } else if (last.trendPercent > 0) {
+    } else if (trend > 0) {
         badge.classList.add('trend-positive');
-        badge.innerHTML = `${trendIcon('up')} Progredindo +${last.trendPercent.toFixed(1)}%`;
-    } else if (last.trendPercent < 0) {
+        badge.innerHTML = `${trendIcon('up')} Progredindo +${trend.toFixed(1)}%`;
+    } else if (trend < 0) {
         badge.classList.add('trend-negative');
-        badge.innerHTML = `${trendIcon('down')} Queda ${last.trendPercent.toFixed(1)}%`;
+        badge.innerHTML = `${trendIcon('down')} Queda ${trend.toFixed(1)}%`;
     } else {
         badge.classList.add('trend-warning');
-        badge.innerHTML = `${trendIcon('flat')} Sem progresso ${last.trendPercent.toFixed(1)}%`;
+        badge.innerHTML = `${trendIcon('flat')} Sem progresso ${trend.toFixed(1)}%`;
     }
 }
 
