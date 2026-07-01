@@ -140,7 +140,47 @@ function renderExerciseGroups(trainingDays, exercises) {
         });
     });
 
+    container.querySelectorAll('.exercise-delete').forEach((button) => {
+        button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            deleteExercise(button.dataset.id, button.dataset.name);
+        });
+    });
+
+    container.querySelectorAll('.delete-day-btn').forEach((button) => {
+        button.addEventListener('click', () => {
+            deleteTrainingDay(button.dataset.dayId, button.dataset.dayName);
+        });
+    });
+
     exercises.forEach((exercise) => loadTrendBadge(exercise.id));
+}
+
+async function deleteExercise(id, name) {
+    if (!window.confirm(`Excluir "${name}"? Isso remove todas as sessões e séries registradas. Não dá para desfazer.`)) {
+        return;
+    }
+    hideAlert();
+    try {
+        await Api.delete(`/api/exercises/${id}`);
+        await loadAll();
+    } catch (err) {
+        showAlert(err.message);
+    }
+}
+
+async function deleteTrainingDay(id, name) {
+    if (!window.confirm(`Excluir o treino "${name}"? Isso remove também TODOS os exercícios dele e seus registros. Não dá para desfazer.`)) {
+        return;
+    }
+    hideAlert();
+    try {
+        await Api.delete(`/api/training-days/${id}`);
+        activeDayFilter = 'all';
+        await loadAll();
+    } catch (err) {
+        showAlert(err.message);
+    }
 }
 
 function groupHtml(day, exercises) {
@@ -149,10 +189,14 @@ function groupHtml(day, exercises) {
         : '<div class="empty-state is-compact">Nenhum exercício cadastrado neste treino ainda.</div>';
     return `
         <section data-day-id="${day.id}" class="mb-4">
-            <h2 class="h5 mt-4 mb-3 pb-2 border-bottom">
-                ${escapeHtml(day.name)}
-                <small class="text-muted">${capitalize(day.dayOfWeekLabel)}</small>
-            </h2>
+            <div class="day-heading mt-4 mb-3 pb-2 border-bottom">
+                <h2 class="h5 mb-0">
+                    ${escapeHtml(day.name)}
+                    <small class="text-muted">${capitalize(day.dayOfWeekLabel)}</small>
+                </h2>
+                <button type="button" class="btn btn-sm btn-outline-danger delete-day-btn"
+                        data-day-id="${day.id}" data-day-name="${escapeHtml(day.name)}">Excluir treino</button>
+            </div>
             <div class="exercise-grid">${cards}</div>
         </section>`;
 }
@@ -160,6 +204,8 @@ function groupHtml(day, exercises) {
 function cardHtml(exercise) {
     return `
         <article class="card exercise-card" data-id="${exercise.id}">
+            <button type="button" class="btn-close exercise-delete" aria-label="Excluir exercício"
+                    data-id="${exercise.id}" data-name="${escapeHtml(exercise.name)}"></button>
             <div class="card-body">
                 <h3 class="h5 mb-1">${escapeHtml(exercise.name)}</h3>
                 <div class="exercise-card-meta">

@@ -2,6 +2,7 @@ package com.treinotracker.controller;
 
 import com.treinotracker.entity.TrainingDay;
 import com.treinotracker.exception.DuplicateResourceException;
+import com.treinotracker.exception.ResourceNotFoundException;
 import com.treinotracker.service.WorkoutService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,11 @@ import java.time.DayOfWeek;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -65,6 +70,26 @@ class TrainingDayControllerTest {
                         .content("{\"name\":\"Treino A - Peito\",\"dayOfWeek\":\"MONDAY\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Treino já existe: Treino A - Peito"));
+    }
+
+    @Test
+    void delete_returns204_whenTrainingDayExists() throws Exception {
+        doNothing().when(workoutService).deleteTrainingDay(1L);
+
+        mockMvc.perform(delete("/api/training-days/1"))
+                .andExpect(status().isNoContent());
+
+        verify(workoutService).deleteTrainingDay(1L);
+    }
+
+    @Test
+    void delete_returns404_whenTrainingDayMissing() throws Exception {
+        doThrow(new ResourceNotFoundException("Treino não encontrado: 99"))
+                .when(workoutService).deleteTrainingDay(99L);
+
+        mockMvc.perform(delete("/api/training-days/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Treino não encontrado: 99"));
     }
 
     private static TrainingDay trainingDayWithId(Long id, String name, DayOfWeek dayOfWeek) {

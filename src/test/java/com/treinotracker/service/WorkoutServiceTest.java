@@ -358,6 +358,55 @@ class WorkoutServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
+    @Test
+    void deleteExercise_removesSeriesSessionsSetLogsAndExercise() {
+        Exercise exercise = exerciseWithId(1L, "Supino reto", "Peito");
+        when(exerciseRepository.findById(1L)).thenReturn(Optional.of(exercise));
+
+        workoutService.deleteExercise(1L);
+
+        verify(serieRepository).deleteByExerciseId(1L);
+        verify(sessaoExercicioRepository).deleteByExerciseId(1L);
+        verify(setLogRepository).deleteByExerciseId(1L);
+        verify(exerciseRepository).delete(exercise);
+    }
+
+    @Test
+    void deleteExercise_throwsResourceNotFoundException_whenExerciseMissing() {
+        when(exerciseRepository.findById(9L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> workoutService.deleteExercise(9L))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verify(exerciseRepository, never()).delete(any());
+        verify(serieRepository, never()).deleteByExerciseId(any());
+    }
+
+    @Test
+    void deleteTrainingDay_cascadesToExercisesAndTheirData() {
+        TrainingDay trainingDay = trainingDayWithId(1L, "Treino A", DayOfWeek.MONDAY);
+        Exercise supino = exerciseWithId(10L, "Supino reto", "Peito");
+        Exercise crucifixo = exerciseWithId(11L, "Crucifixo", "Peito");
+        when(trainingDayRepository.findById(1L)).thenReturn(Optional.of(trainingDay));
+        when(exerciseRepository.findByTrainingDayId(1L)).thenReturn(List.of(supino, crucifixo));
+
+        workoutService.deleteTrainingDay(1L);
+
+        verify(serieRepository).deleteByExerciseId(10L);
+        verify(serieRepository).deleteByExerciseId(11L);
+        verify(exerciseRepository).delete(supino);
+        verify(exerciseRepository).delete(crucifixo);
+        verify(trainingDayRepository).delete(trainingDay);
+    }
+
+    @Test
+    void deleteTrainingDay_throwsResourceNotFoundException_whenMissing() {
+        when(trainingDayRepository.findById(9L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> workoutService.deleteTrainingDay(9L))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verify(trainingDayRepository, never()).delete(any());
+    }
+
     private static Serie serie(Exercise exercise, int semana, int posicao, double carga, int reps) {
         SessaoExercicio sessao = new SessaoExercicio(exercise, semana, LocalDate.now());
         return new Serie(sessao, posicao, carga, reps);

@@ -2,6 +2,7 @@ let rmChart;
 let progressaoData = [];
 let selectedPosicao = null;
 let selectedMetric = 'rm';
+let exerciseName = 'este exercício';
 
 const METRICS = {
     rm: { label: '1RM estimado', unit: 'kg', title: '1RM estimado por semana (fórmula de Epley)', value: (p) => p.estimated1RM, decimals: 1 },
@@ -22,6 +23,22 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('metric-select').addEventListener('change', (event) => {
         selectedMetric = event.target.value;
         redrawChart();
+    });
+
+    document.getElementById('delete-exercise-btn').addEventListener('click', async (event) => {
+        const button = event.currentTarget;
+        if (!window.confirm(`Excluir "${exerciseName}"? Isso remove todas as sessões e séries registradas. Não dá para desfazer.`)) {
+            return;
+        }
+        hideAlert();
+        setButtonLoading(button, true, 'Excluindo...');
+        try {
+            await Api.delete(`/api/exercises/${exerciseId}`);
+            window.location.href = '/exercises';
+        } catch (err) {
+            showAlert(err.message);
+            setButtonLoading(button, false);
+        }
     });
 
     document.getElementById('log-session-form').addEventListener('submit', async (event) => {
@@ -55,8 +72,10 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadExercise(exerciseId) {
     try {
         const exercise = await Api.get(`/api/exercises/${exerciseId}`);
+        exerciseName = exercise.name;
         document.getElementById('exercise-title').textContent =
             `${exercise.name} · ${exercise.muscleGroup} · ${exercise.trainingDay.name}`;
+        document.getElementById('delete-exercise-btn').classList.remove('d-none');
         renderSeriesInputs(exercise.seriesValidas);
     } catch (err) {
         document.getElementById('exercise-title').textContent = 'Exercício não encontrado';

@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -71,5 +72,17 @@ public class ExerciseController {
     })
     public ResponseEntity<ExerciseResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ExerciseResponse.from(workoutService.getExercise(id)));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Exclui um exercício", description = "Remove também suas séries, sessões e registros de séries")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Exercício excluído"),
+            @ApiResponse(responseCode = "404", description = "Exercício não encontrado",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        workoutService.deleteExercise(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -183,6 +183,30 @@ public class WorkoutService {
         return resultado;
     }
 
+    @Transactional
+    public void deleteExercise(Long exerciseId) {
+        Exercise exercise = findExerciseOrThrow(exerciseId);
+        deleteExerciseData(exerciseId);
+        exerciseRepository.delete(exercise);
+    }
+
+    @Transactional
+    public void deleteTrainingDay(Long trainingDayId) {
+        TrainingDay trainingDay = findTrainingDayOrThrow(trainingDayId);
+        // Remove em cascata os exercícios do treino (com suas séries, sessões e set logs).
+        for (Exercise exercise : exerciseRepository.findByTrainingDayId(trainingDayId)) {
+            deleteExerciseData(exercise.getId());
+            exerciseRepository.delete(exercise);
+        }
+        trainingDayRepository.delete(trainingDay);
+    }
+
+    private void deleteExerciseData(Long exerciseId) {
+        serieRepository.deleteByExerciseId(exerciseId);
+        sessaoExercicioRepository.deleteByExerciseId(exerciseId);
+        setLogRepository.deleteByExerciseId(exerciseId);
+    }
+
     public boolean isProgressing(Long exerciseId) {
         List<WeekSummary> progression = getProgression(exerciseId);
         if (progression.isEmpty()) {

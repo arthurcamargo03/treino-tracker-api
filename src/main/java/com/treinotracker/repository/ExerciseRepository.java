@@ -20,4 +20,6 @@ public interface ExerciseRepository extends JpaRepository<Exercise, Long> {
     @EntityGraph(attributePaths = "trainingDay")
     @Query("select e from Exercise e where e.id = :id")
     Optional<Exercise> findByIdWithTrainingDay(@Param("id") Long id);
+
+    List<Exercise> findByTrainingDayId(Long trainingDayId);
 }

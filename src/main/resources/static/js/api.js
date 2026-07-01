@@ -35,6 +35,10 @@ const Api = {
         });
         return Api._handle(res);
     },
+    async delete(url) {
+        const res = await fetch(url, { method: 'DELETE' });
+        return Api._handle(res);
+    },
     async _handle(res) {
         if (res.status === 204) return null;
         const data = await res.json().catch(() => null);

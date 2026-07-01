@@ -16,7 +16,11 @@ import java.time.DayOfWeek;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -128,6 +132,26 @@ class ExerciseControllerTest {
                 .thenThrow(new ResourceNotFoundException("Exercício não encontrado: 999"));
 
         mockMvc.perform(get("/api/exercises/999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Exercício não encontrado: 999"));
+    }
+
+    @Test
+    void delete_returns204_whenExerciseExists() throws Exception {
+        doNothing().when(workoutService).deleteExercise(1L);
+
+        mockMvc.perform(delete("/api/exercises/1"))
+                .andExpect(status().isNoContent());
+
+        verify(workoutService).deleteExercise(1L);
+    }
+
+    @Test
+    void delete_returns404_whenExerciseMissing() throws Exception {
+        doThrow(new ResourceNotFoundException("Exercício não encontrado: 999"))
+                .when(workoutService).deleteExercise(999L);
+
+        mockMvc.perform(delete("/api/exercises/999"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Exercício não encontrado: 999"));
     }
