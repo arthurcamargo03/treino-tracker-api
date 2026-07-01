@@ -5,21 +5,24 @@ document.addEventListener('DOMContentLoaded', () => {
     loadExercise(exerciseId);
     loadProgression(exerciseId);
 
-    document.getElementById('log-set-form').addEventListener('submit', async (event) => {
+    document.getElementById('log-session-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         hideAlert();
         clearFormErrors(event.target);
         const submitButton = event.submitter;
-        const payload = {
-            week: parseIntegerField('set-week'),
-            weight: parseDecimalField('set-weight'),
-            reps: parseIntegerField('set-reps'),
-            sets: parseIntegerField('set-sets')
-        };
+
+        const semana = parseIntegerField('session-week');
+        const series = collectSeries(event.target);
+        if (series === null) {
+            showAlert('Preencha carga e repetições de todas as séries.');
+            return;
+        }
+
         setButtonLoading(submitButton, true, 'Registrando...');
         try {
-            await Api.postJson(`/api/exercises/${exerciseId}/sets`, payload);
-            event.target.reset();
+            await Api.postJson(`/api/exercises/${exerciseId}/sessoes`, { semana, series });
+            document.getElementById('session-week').value = '';
+            clearSeriesInputs(event.target);
             clearFormErrors(event.target);
             await loadProgression(exerciseId);
         } catch (err) {
@@ -35,10 +38,67 @@ async function loadExercise(exerciseId) {
         const exercise = await Api.get(`/api/exercises/${exerciseId}`);
         document.getElementById('exercise-title').textContent =
             `${exercise.name} · ${exercise.muscleGroup} · ${exercise.trainingDay.name}`;
+        renderSeriesInputs(exercise.seriesValidas);
     } catch (err) {
         document.getElementById('exercise-title').textContent = 'Exercício não encontrado';
+        document.getElementById('series-rows').innerHTML =
+            '<div class="empty-state is-compact">Não foi possível carregar as séries.</div>';
         showAlert(err.message);
     }
+}
+
+function renderSeriesInputs(seriesValidas) {
+    const container = document.getElementById('series-rows');
+    const total = Number.isInteger(seriesValidas) && seriesValidas > 0 ? seriesValidas : 3;
+    let html = '';
+    for (let posicao = 1; posicao <= total; posicao++) {
+        html += `
+        <div class="row g-2 align-items-end series-row" data-posicao="${posicao}">
+            <div class="col-2">
+                <span class="series-tag">${posicao}ª</span>
+            </div>
+            <div class="col-5">
+                ${posicao === 1 ? '<label class="form-label">Carga (kg)</label>' : ''}
+                <input type="text" inputmode="decimal" class="form-control series-carga" placeholder="60,5" required>
+            </div>
+            <div class="col-5">
+                ${posicao === 1 ? '<label class="form-label">Reps</label>' : ''}
+                <input type="number" min="1" class="form-control series-reps" required>
+            </div>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+function collectSeries(form) {
+    const rows = form.querySelectorAll('.series-row');
+    if (rows.length === 0) return null;
+    const series = [];
+    for (const row of rows) {
+        const posicao = parseInt(row.dataset.posicao, 10);
+        const cargaInput = row.querySelector('.series-carga');
+        const repsInput = row.querySelector('.series-reps');
+        const carga = parseNumberValue(cargaInput.value);
+        const reps = parseNumberValue(repsInput.value);
+        if (carga === null || carga <= 0 || reps === null || reps <= 0) {
+            return null;
+        }
+        series.push({ posicao, carga, reps });
+    }
+    return series;
+}
+
+function clearSeriesInputs(form) {
+    form.querySelectorAll('.series-carga, .series-reps').forEach((input) => {
+        input.value = '';
+    });
+}
+
+function parseNumberValue(raw) {
+    const value = raw.trim().replace(',', '.');
+    if (value === '') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
 }
 
 async function loadProgression(exerciseId) {

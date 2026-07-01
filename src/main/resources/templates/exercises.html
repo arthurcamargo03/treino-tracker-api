@@ -25,15 +25,20 @@
                         <label class="form-label">Nome</label>
                         <input type="text" class="form-control" id="exercise-name" data-field="name" required placeholder="Supino reto">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Grupo muscular</label>
                         <input type="text" class="form-control" id="exercise-group" data-field="muscleGroup" required placeholder="Peito">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Treino do dia</label>
                         <select class="form-select" id="exercise-training-day" data-field="trainingDayId" required>
                             <option value="" disabled selected>Selecione um treino...</option>
                         </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="exercise-series-validas">Séries válidas</label>
+                        <input type="number" min="1" step="1" class="form-control" id="exercise-series-validas"
+                               data-field="seriesValidas" value="3" required>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary mt-3">Adicionar</button>

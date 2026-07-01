@@ -55,7 +55,9 @@ public class ExerciseController {
                     content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public ResponseEntity<ExerciseResponse> create(@Valid @RequestBody ExerciseRequest request) {
-        Exercise exercise = workoutService.addExercise(request.name(), request.muscleGroup(), request.trainingDayId());
+        int seriesValidas = request.seriesValidas() != null ? request.seriesValidas() : 3;
+        Exercise exercise = workoutService.addExercise(
+                request.name(), request.muscleGroup(), request.trainingDayId(), seriesValidas);
         return ResponseEntity.created(URI.create("/api/exercises/" + exercise.getId()))
                 .body(ExerciseResponse.from(exercise));
     }

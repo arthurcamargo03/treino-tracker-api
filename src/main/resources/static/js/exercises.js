@@ -11,9 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const name = document.getElementById('exercise-name').value.trim();
         const muscleGroup = document.getElementById('exercise-group').value.trim();
         const trainingDayId = parseOptionalIntegerField('exercise-training-day');
+        const seriesValidas = parseOptionalIntegerField('exercise-series-validas');
         setButtonLoading(submitButton, true, 'Adicionando...');
         try {
-            await Api.postJson('/api/exercises', { name, muscleGroup, trainingDayId });
+            await Api.postJson('/api/exercises', { name, muscleGroup, trainingDayId, seriesValidas });
             event.target.reset();
             clearFormErrors(event.target);
             await loadAll();

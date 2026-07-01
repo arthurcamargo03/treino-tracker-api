@@ -62,7 +62,7 @@ class ExerciseControllerTest {
     @Test
     void create_returns201WithLocation_whenRequestIsValid() throws Exception {
         TrainingDay trainingDay = trainingDayWithId(1L, "Treino A — Peito", DayOfWeek.MONDAY);
-        when(workoutService.addExercise(eq("Supino reto"), eq("Peito"), eq(1L)))
+        when(workoutService.addExercise(eq("Supino reto"), eq("Peito"), eq(1L), eq(3)))
                 .thenReturn(exerciseWithId(1L, "Supino reto", "Peito", trainingDay));
 
         mockMvc.perform(post("/api/exercises")
@@ -72,6 +72,7 @@ class ExerciseControllerTest {
                 .andExpect(header().string("Location", "/api/exercises/1"))
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("Supino reto"))
+                .andExpect(jsonPath("$.seriesValidas").value(3))
                 .andExpect(jsonPath("$.trainingDay.name").value("Treino A — Peito"));
     }
 
@@ -89,7 +90,7 @@ class ExerciseControllerTest {
 
     @Test
     void create_returns409_whenNameIsDuplicate() throws Exception {
-        when(workoutService.addExercise(eq("Supino reto"), eq("Peito"), eq(1L)))
+        when(workoutService.addExercise(eq("Supino reto"), eq("Peito"), eq(1L), eq(3)))
                 .thenThrow(new DuplicateResourceException("Exercício já existe: Supino reto"));
 
         mockMvc.perform(post("/api/exercises")
@@ -101,7 +102,7 @@ class ExerciseControllerTest {
 
     @Test
     void create_returns404_whenTrainingDayMissing() throws Exception {
-        when(workoutService.addExercise(eq("Supino reto"), eq("Peito"), eq(99L)))
+        when(workoutService.addExercise(eq("Supino reto"), eq("Peito"), eq(99L), eq(3)))
                 .thenThrow(new ResourceNotFoundException("Treino não encontrado: 99"));
 
         mockMvc.perform(post("/api/exercises")

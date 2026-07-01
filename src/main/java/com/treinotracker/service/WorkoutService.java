@@ -56,11 +56,19 @@ public class WorkoutService {
 
     @Transactional
     public Exercise addExercise(String name, String group, Long trainingDayId) {
+        return addExercise(name, group, trainingDayId, 3);
+    }
+
+    @Transactional
+    public Exercise addExercise(String name, String group, Long trainingDayId, int seriesValidas) {
+        validatePositive(seriesValidas, "Séries válidas");
         if (exerciseRepository.findByNameIgnoreCase(name).isPresent()) {
             throw new DuplicateResourceException("Exercício já existe: " + name);
         }
         TrainingDay trainingDay = findTrainingDayOrThrow(trainingDayId);
-        return exerciseRepository.save(new Exercise(name, group, trainingDay));
+        Exercise exercise = new Exercise(name, group, trainingDay);
+        exercise.setSeriesValidas(seriesValidas);
+        return exerciseRepository.save(exercise);
     }
 
     public List<TrainingDay> getTrainingDays() {

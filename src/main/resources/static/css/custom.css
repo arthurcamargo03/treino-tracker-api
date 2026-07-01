@@ -254,6 +254,26 @@ small,
     color: var(--muted);
 }
 
+.series-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.series-tag {
+    align-items: center;
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    display: inline-flex;
+    font-size: 13px;
+    font-weight: 600;
+    height: 38px;
+    justify-content: center;
+    width: 100%;
+}
+
 .trend-badge {
     align-items: center;
     border-radius: 999px;

@@ -22,27 +22,18 @@
 
     <div class="row g-4">
         <div class="col-lg-5">
-            <form id="log-set-form" class="card card-body shadow-sm" novalidate>
-                <h2 class="h6 text-muted">Registrar série</h2>
+            <form id="log-session-form" class="card card-body shadow-sm" novalidate>
+                <h2 class="h6 text-muted">Registrar sessão</h2>
                 <div class="row g-2">
-                    <div class="col-6">
-                        <label class="form-label">Semana</label>
-                        <input type="number" min="1" class="form-control" id="set-week" data-field="week" required>
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">Carga (kg)</label>
-                        <input type="text" inputmode="decimal" class="form-control" id="set-weight" data-field="weight" required placeholder="60,5">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">Repetições</label>
-                        <input type="number" min="1" class="form-control" id="set-reps" data-field="reps" required>
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">Séries</label>
-                        <input type="number" min="1" class="form-control" id="set-sets" data-field="sets" required>
+                    <div class="col-12">
+                        <label class="form-label" for="session-week">Semana</label>
+                        <input type="number" min="1" class="form-control" id="session-week" data-field="semana" required>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary mt-3">Registrar série</button>
+                <div id="series-rows" class="series-rows mt-3">
+                    <div class="loading-state is-compact">Carregando séries...</div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Registrar sessão</button>
             </form>
 
             <div class="table-responsive mt-4">
@@ -86,6 +77,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="/js/api.js"></script>
-<script src="/js/exercise-detail.js"></script>
+<script src="/js/exercise-detail.js?v=series-form-1"></script>
 </body>
 </html>
