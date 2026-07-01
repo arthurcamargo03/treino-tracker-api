@@ -1,6 +1,7 @@
 package com.treinotracker.config;
 
 import com.treinotracker.entity.Exercise;
+import com.treinotracker.entity.Serie;
 import com.treinotracker.entity.TrainingDay;
 import com.treinotracker.repository.ExerciseRepository;
 import com.treinotracker.service.WorkoutService;
@@ -9,6 +10,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.time.DayOfWeek;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 @Profile("dev")
@@ -33,22 +36,35 @@ public class DevDataSeeder implements CommandLineRunner {
         TrainingDay treinoC = workoutService.addTrainingDay("Treino C — Braços", DayOfWeek.FRIDAY);
 
         Exercise supino = workoutService.addExercise("Supino reto", "Peito", treinoA.getId());
-        workoutService.logSet(supino.getId(), 1, 60.0, 10, 3);
-        workoutService.logSet(supino.getId(), 2, 62.5, 10, 3);
-        workoutService.logSet(supino.getId(), 3, 65.0, 10, 3);
-        workoutService.logSet(supino.getId(), 4, 67.5, 10, 3);
-        workoutService.logSet(supino.getId(), 5, 70.0, 10, 3);
-        workoutService.logSet(supino.getId(), 6, 72.5, 10, 3);
+        for (int semana = 1; semana <= 6; semana++) {
+            double base = 60.0 + (semana - 1) * 2.5;
+            registrarSessao(supino.getId(), semana, base, 10, 3, 2.5);
+        }
 
         Exercise terra = workoutService.addExercise("Levantamento terra", "Posterior de coxa", treinoB.getId());
-        workoutService.logSet(terra.getId(), 1, 140.0, 5, 3);
-        workoutService.logSet(terra.getId(), 2, 145.0, 5, 3);
-        workoutService.logSet(terra.getId(), 3, 150.0, 5, 3);
-        workoutService.logSet(terra.getId(), 4, 155.0, 5, 3);
+        for (int semana = 1; semana <= 4; semana++) {
+            double base = 140.0 + (semana - 1) * 5.0;
+            registrarSessao(terra.getId(), semana, base, 5, 3, 5.0);
+        }
 
-        Exercise rosca = workoutService.addExercise("Rosca direta", "Bíceps", treinoC.getId());
-        workoutService.logSet(rosca.getId(), 1, 18.0, 12, 3);
-        workoutService.logSet(rosca.getId(), 2, 20.0, 12, 3);
-        workoutService.logSet(rosca.getId(), 3, 22.0, 12, 3);
+        Exercise rosca = workoutService.addExercise("Rosca direta", "Bíceps", treinoC.getId(), 2);
+        for (int semana = 1; semana <= 3; semana++) {
+            double base = 18.0 + (semana - 1) * 2.0;
+            registrarSessao(rosca.getId(), semana, base, 12, 2, 2.0);
+        }
+    }
+
+    // Cada sessão tem `seriesValidas` séries: a 1ª com a carga base e as seguintes
+    // um pouco mais leves (fadiga), todas subindo semana a semana.
+    private void registrarSessao(Long exerciseId, int semana, double base, int reps, int seriesValidas, double decremento) {
+        List<Serie> series = new ArrayList<>();
+        for (int posicao = 1; posicao <= seriesValidas; posicao++) {
+            Serie serie = new Serie();
+            serie.setPosicao(posicao);
+            serie.setCarga(base - (posicao - 1) * decremento);
+            serie.setReps(reps);
+            series.add(serie);
+        }
+        workoutService.registrarSessao(exerciseId, semana, series);
     }
 }

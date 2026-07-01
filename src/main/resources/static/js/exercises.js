@@ -174,12 +174,14 @@ async function loadTrendBadge(exerciseId) {
     const badge = document.getElementById(`trend-badge-${exerciseId}`);
     if (!badge) return;
     try {
-        const progression = await Api.get(`/api/exercises/${exerciseId}/progression`);
-        if (progression.length === 0) {
+        const progressao = await Api.get(`/api/exercises/${exerciseId}/progressao-series`);
+        const primeira = progressao.find((item) => item.posicao === Math.min(...progressao.map((p) => p.posicao)));
+        const pontos = primeira ? primeira.pontos : [];
+        if (pontos.length === 0) {
             badge.remove();
             return;
         }
-        const last = progression[progression.length - 1];
+        const last = pontos[pontos.length - 1];
         if (last.trendPercent === null) {
             badge.remove();
             return;

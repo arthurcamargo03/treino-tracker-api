@@ -1,9 +1,18 @@
 let rmChart;
+let progressaoData = [];
+let selectedPosicao = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     const exerciseId = document.body.dataset.exerciseId;
     loadExercise(exerciseId);
     loadProgression(exerciseId);
+
+    document.getElementById('posicao-select').addEventListener('change', (event) => {
+        selectedPosicao = parseInt(event.target.value, 10);
+        const pontos = pontosForPosicao(selectedPosicao);
+        renderChart(pontos);
+        renderTrendBadge(pontos);
+    });
 
     document.getElementById('log-session-form').addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -104,34 +113,85 @@ function parseNumberValue(raw) {
 async function loadProgression(exerciseId) {
     setProgressionLoading();
     try {
-        const progression = await Api.get(`/api/exercises/${exerciseId}/progression`);
-        renderTable(progression);
-        renderChart(progression);
-        renderTrendBadge(progression);
+        progressaoData = await Api.get(`/api/exercises/${exerciseId}/progressao-series`);
+        renderPosicaoSelector(progressaoData);
+        renderTable(progressaoData);
+        const pontos = pontosForPosicao(selectedPosicao);
+        renderChart(pontos);
+        renderTrendBadge(pontos);
     } catch (err) {
+        progressaoData = [];
         document.getElementById('progression-table-body').innerHTML = tableStateRow(6, 'Não foi possível carregar os registros.');
+        document.getElementById('series-selector').classList.add('d-none');
         setChartState('Não foi possível carregar o gráfico.', 'empty');
         document.getElementById('trend-badge').classList.add('d-none');
         showAlert(err.message);
     }
 }
 
-function renderTable(progression) {
+// Transforma a lista por posição em linhas por semana → série 1, série 2...
+function renderTable(data) {
     const body = document.getElementById('progression-table-body');
-    if (progression.length === 0) {
-        body.innerHTML = tableStateRow(6, 'Sem registros ainda — registre a primeira série acima.');
+    if (data.length === 0) {
+        body.innerHTML = tableStateRow(6, 'Sem registros ainda — registre a primeira sessão acima.');
         return;
     }
-    body.innerHTML = progression.map((week) => `
-        <tr>
-            <td>${week.week}</td>
-            <td>${week.weight} kg</td>
-            <td>${week.reps}</td>
-            <td>${week.sets}</td>
-            <td>${week.estimated1RM.toFixed(1)} kg</td>
-            <td>${formatTrendCell(week.trendPercent)}</td>
-        </tr>
-    `).join('');
+
+    const semanas = new Map();
+    data.forEach((posicao) => {
+        posicao.pontos.forEach((ponto) => {
+            if (!semanas.has(ponto.semana)) {
+                semanas.set(ponto.semana, []);
+            }
+            semanas.get(ponto.semana).push({ posicao: posicao.posicao, ...ponto });
+        });
+    });
+
+    const semanasOrdenadas = [...semanas.keys()].sort((a, b) => a - b);
+    let html = '';
+    semanasOrdenadas.forEach((semana) => {
+        const series = semanas.get(semana).sort((a, b) => a.posicao - b.posicao);
+        series.forEach((serie, index) => {
+            html += `
+        <tr${index === 0 ? ' class="week-start"' : ''}>
+            <td>${index === 0 ? semana : ''}</td>
+            <td>${serie.posicao}ª</td>
+            <td>${formatCarga(serie.carga)} kg</td>
+            <td>${serie.reps}</td>
+            <td>${serie.estimated1RM.toFixed(1)} kg</td>
+            <td>${formatTrendCell(serie.trendPercent)}</td>
+        </tr>`;
+        });
+    });
+    body.innerHTML = html;
+}
+
+function renderPosicaoSelector(data) {
+    const selector = document.getElementById('series-selector');
+    const select = document.getElementById('posicao-select');
+    if (data.length === 0) {
+        selector.classList.add('d-none');
+        selectedPosicao = null;
+        return;
+    }
+
+    const posicoes = data.map((item) => item.posicao).sort((a, b) => a - b);
+    if (selectedPosicao === null || !posicoes.includes(selectedPosicao)) {
+        selectedPosicao = posicoes[0];
+    }
+    select.innerHTML = posicoes.map((posicao) =>
+        `<option value="${posicao}"${posicao === selectedPosicao ? ' selected' : ''}>${posicao}ª série</option>`
+    ).join('');
+    selector.classList.toggle('d-none', posicoes.length <= 1);
+}
+
+function pontosForPosicao(posicao) {
+    const found = progressaoData.find((item) => item.posicao === posicao);
+    return found ? found.pontos : [];
+}
+
+function formatCarga(carga) {
+    return Number.isInteger(carga) ? String(carga) : carga.toFixed(1).replace('.', ',');
 }
 
 function formatTrendCell(trendPercent) {
@@ -176,12 +236,12 @@ function renderChart(progression) {
     const negative = styles.getPropertyValue('--progress-negative').trim() || '#DC2626';
     const accentFill = 'rgba(16, 185, 129, 0.08)';
     const gridColor = colorWithAlpha(border, 0.72);
-    const labels = progression.map((week) => `Semana ${week.week}`);
-    const data = progression.map((week) => week.estimated1RM);
-    const pointColors = progression.map((week) => {
-        if (week.trendPercent === null) return faint;
-        if (week.trendPercent > 0) return positive;
-        if (week.trendPercent < 0) return negative;
+    const labels = progression.map((ponto) => `Semana ${ponto.semana}`);
+    const data = progression.map((ponto) => ponto.estimated1RM);
+    const pointColors = progression.map((ponto) => {
+        if (ponto.trendPercent === null) return faint;
+        if (ponto.trendPercent > 0) return positive;
+        if (ponto.trendPercent < 0) return negative;
         return warning;
     });
     const lastIndex = data.length - 1;

@@ -274,6 +274,27 @@ small,
     width: 100%;
 }
 
+.series-selector {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.series-selector .form-label {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.series-selector .form-select {
+    max-width: 160px;
+}
+
+.progression-table tr.week-start:not(:first-child) td {
+    border-top: 2px solid var(--border);
+}
+
 .trend-badge {
     align-items: center;
     border-radius: 999px;
