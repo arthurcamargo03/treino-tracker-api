@@ -1,9 +1,17 @@
+# Artefatos de build e dados locais nao entram na imagem
 target/
 data/
+
+# Metadados e IDE
 .git
+.gitignore
 .idea
-.mvn
-mvnw
+.vscode
+*.iml
+
+# Wrapper do Windows nao e usado no container Linux
 mvnw.cmd
+
+# Docs e lixo do SO
 *.md
 .DS_Store
