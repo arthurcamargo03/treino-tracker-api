@@ -117,12 +117,25 @@ Rodar os testes:
 
 ### Rodando com Docker
 
+Build da imagem (multi-stage: compila com Maven+JDK 21 e roda só o `.jar` sobre `eclipse-temurin:21-jre`) e execução:
+
 ```bash
 docker build -t treino-tracker-api .
 docker run -p 8080:8080 treino-tracker-api
 ```
 
-Por padrão o container também sobe no perfil `dev` (H2 dentro do próprio container — sem persistência entre execuções). Para usar PostgreSQL, defina `SPRING_PROFILES_ACTIVE=prod` e as variáveis descritas abaixo.
+Por padrão o container também sobe no perfil `dev` (H2 dentro do próprio container — sem persistência entre execuções). A porta é lida de `PORT` (`server.port=${PORT:8080}`) e o perfil de `SPRING_PROFILES_ACTIVE`, então a mesma imagem serve para a Render sem alteração.
+
+#### Prod local com PostgreSQL (docker-compose)
+
+Para rodar o perfil `prod` contra um Postgres real na sua máquina:
+
+```bash
+cp .env.example .env   # ajuste as credenciais se quiser (opcional)
+docker compose up --build
+```
+
+O `docker-compose.yml` sobe dois serviços: `db` (`postgres:16`, com volume `pgdata` para persistir os dados e healthcheck via `pg_isready`) e `app` (buildado pelo `Dockerfile`, com `SPRING_PROFILES_ACTIVE=prod` e as variáveis `PG*` apontando para o `db`). O `depends_on` espera o banco ficar *healthy* antes de iniciar o app. O Flyway cria o schema no startup e, por ser a primeira execução (banco vazio), o app popula um histórico de exemplo. Acesse `http://localhost:8080/exercises`.
 
 ## Deploy
 
@@ -148,8 +161,9 @@ O perfil `prod` lê a conexão exclusivamente de variáveis de ambiente (nunca d
 O repositório inclui um `render.yaml` (Blueprint) que provisiona um banco PostgreSQL gerenciado e o serviço web a partir do `Dockerfile`, já conectando as variáveis acima automaticamente:
 
 1. No painel da Render, **New > Blueprint** e aponte para este repositório.
-2. A Render cria o banco `treino-tracker-db` e o serviço `treino-tracker-api`, já com `SPRING_PROFILES_ACTIVE=prod` e as credenciais do banco injetadas via `fromDatabase`.
-3. Após o primeiro deploy, copie a URL pública gerada e atualize a seção [Demo](#demo) deste README.
+2. A Render cria o banco `treino-tracker-db` e o serviço `treino-tracker-api`, já com `SPRING_PROFILES_ACTIVE=prod` e as credenciais do banco injetadas via `fromDatabase`. Nenhuma senha é digitada à mão — tudo vem do banco gerenciado.
+3. No primeiro deploy o Flyway roda as migrations e, com o banco vazio, o app popula automaticamente um histórico de exemplo (3 exercícios com progressão realista) para o gráfico já abrir preenchido. Deploys seguintes não reinserem nada.
+4. A Render usa `healthCheckPath: /api/exercises` para saber quando o serviço está no ar. Após o deploy, copie a URL pública gerada e atualize a seção [Demo](#demo) deste README.
 
 ### Railway
 
